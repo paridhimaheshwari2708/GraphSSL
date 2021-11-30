@@ -8,6 +8,7 @@ from torch_geometric.datasets import TUDataset
 
 DATA_SPLIT = [0.7, 0.2, 0.1]
 
+
 def load_dataset(args):
 	dataset = TUDataset(root='/tmp/PROTEINS', name='PROTEINS', use_node_attr=True)
 	return dataset
@@ -26,7 +27,9 @@ def split_dataset(dataset):
 
 
 def build_loader(args, dataset, subset):
-	loader = DataLoader(custom_dataset(dataset, subset), num_workers=args.num_workers, batch_size=args.batch_size, follow_batch=['x_anchor', 'x_pos', 'x_neg'])
+	loader = DataLoader(custom_dataset(dataset, subset), \
+						num_workers=args.num_workers, batch_size=args.batch_size, \
+						follow_batch=['x_anchor', 'x_pos', 'x_neg'])
 	return loader
 
 
