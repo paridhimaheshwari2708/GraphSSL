@@ -69,10 +69,9 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 			data.to(device)
 
 			readout_anchor = model((data.x_anchor, data.edge_index_anchor, data.x_anchor_batch))
-			readout_pos = model((data.x_pos, data.edge_index_pos, data.x_pos_batch))
-			readout_neg = model((data.x_neg, data.edge_index_neg, data.x_neg_batch))
+			readout_positive = model((data.x_pos, data.edge_index_pos, data.x_pos_batch))
 
-			loss = contrastive_fn(readout_anchor, readout_pos, readout_neg)
+			loss = contrastive_fn(readout_anchor, readout_positive)
 
 			if mode == "train":
 				# Backprop
