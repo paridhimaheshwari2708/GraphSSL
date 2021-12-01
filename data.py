@@ -1,21 +1,96 @@
 import os
 import torch
+import random
 import numpy as np
 from tqdm import tqdm
+import torch.nn as nn
+import torch.nn.functional as F
 from torch_geometric.loader import DataLoader
 from torch_geometric.data import Data, Dataset
 from torch_geometric.datasets import TUDataset
+from torch_geometric.utils import degree
+
 
 DATA_SPLIT = [0.7, 0.2, 0.1]
 
 
-def load_dataset(args):
-	dataset = TUDataset(root='/tmp/PROTEINS', name='PROTEINS', use_node_attr=True)
-	return dataset
+def get_max_deg(dataset):
+	max_deg = 0
+	for data in dataset:
+		row, col = data.edge_index
+		num_nodes = data.num_nodes
+		deg = degree(row, num_nodes)
+		deg = max(deg).item()
+		if deg > max_deg:
+			max_deg = int(deg)
+	return max_deg
+
+
+class CatDegOnehot(object):
+	"""
+	Adds the node degree as one hot encodings to the node features.
+	Args:
+		max_degree (int): Maximum degree.
+		in_degree (bool, optional): If set to :obj:`True`, will compute the
+			in-degree of nodes instead of the out-degree.
+			(default: :obj:`False`)
+		cat (bool, optional): Concat node degrees to node features instead
+			of replacing them. (default: :obj:`True`)
+	"""
+
+	def __init__(self, max_degree, in_degree=False, cat=True):
+		self.max_degree = max_degree
+		self.in_degree = in_degree
+		self.cat = cat
+
+	def __call__(self, data):
+		idx, x = data.edge_index[1 if self.in_degree else 0], data.x
+		deg = degree(idx, data.num_nodes, dtype=torch.long)
+		deg = F.one_hot(deg, num_classes=self.max_degree + 1).to(torch.float)
+
+		if x is not None and self.cat:
+			x = x.view(-1, 1) if x.dim() == 1 else x
+			data.x = torch.cat([x, deg.to(x.dtype)], dim=-1)
+		else:
+			data.x = deg
+		return data
+
+
+def load_dataset(name, expand_features=True):
+	if name == "proteins":
+		dataset = TUDataset(root='/tmp/PROTEINS', name='PROTEINS', use_node_attr=True)
+	elif name == "enzymes":
+		dataset = TUDataset(root='/tmp/ENZYMES', name='ENZYMES', use_node_attr=True)
+	elif name == "collab":
+		dataset = TUDataset(root='/tmp/COLLAB', name='COLLAB', use_node_attr=True)
+	elif name == "reddit_binary":
+		dataset = TUDataset(root='/tmp/REDDIT-BINARY', name='REDDIT-BINARY', use_node_attr=True)
+	elif name == "reddit_multi":
+		dataset = TUDataset(root='/tmp/REDDIT-MULTI-5K', name='REDDIT-MULTI-5K', use_node_attr=True)
+	elif name == "imdb_binary":
+		dataset = TUDataset(root='/tmp/IMDB-BINARY', name='IMDB-BINARY', use_node_attr=True)
+	elif name == "imdb_multi":
+		dataset = TUDataset(root='/tmp/IMDB-MULTI', name='IMDB-MULTI', use_node_attr=True)
+	elif name == "dd":
+		dataset = TUDataset(root='/tmp/DD', name='DD', use_node_attr=True)
+	elif name == "mutag":
+		dataset = TUDataset(root='/tmp/MUTAG', name='MUTAG', use_node_attr=True)
+	elif name == "nci1":
+		dataset = TUDataset(root='/tmp/NCI1', name='NCI1', use_node_attr=True)
+
+	if dataset[0].x is None or expand_features:
+		max_degree = get_max_deg(dataset)
+		transform = CatDegOnehot(max_degree)
+		dataset = [transform(graph) for graph in dataset]
+	else:
+		dataset = [graph for graph in dataset]
+	feat_dim = dataset[0].num_node_features
+
+	return dataset, feat_dim
 
 
 def split_dataset(dataset):
-	dataset.shuffle()
+	random.shuffle(dataset)
 
 	n = len(dataset)
 	train_split, val_split, test_split = DATA_SPLIT

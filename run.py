@@ -7,13 +7,15 @@ from tqdm import trange
 from tensorboardX import SummaryWriter
 
 from data import *
+from loss import *
 from model import *
-from contrastive import *
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def set_seed(seed):
-	"""Utility function to set seed values for RNG for various modules"""
+	"""
+	Utility function to set seed values for RNG for various modules
+	"""
 	np.random.seed(seed)
 	torch.manual_seed(seed)
 	torch.cuda.manual_seed(seed)
@@ -31,7 +33,10 @@ class Options:
 		self.parser.add_argument("--epochs", dest="epochs", action="store", default=20, type=int)
 		self.parser.add_argument("--batch_size", dest="batch_size", action="store", default=64, type=int)
 		self.parser.add_argument("--num_workers", dest="num_workers", action="store", default=8, type=int)
+		self.parser.add_argument("--dataset", dest="dataset", action="store", required=True, type=str, \
+			choices=["proteins", "enzymes", "reddit_binary", "reddit_multi", "imdb_binary", "imdb_multi", "dd", "mutag", "nci1"])
 		self.parser.add_argument("--model", dest="model", action="store", default="gcn", type=str, choices=["gcn", "gin", "resgcn"])
+		self.parser.add_argument("--loss", dest="loss", action="store", default="infonce", type=str, choices=["infonce", "jensen_shannon"])
 
 		self.parse()
 		self.check_args()
@@ -58,7 +63,7 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 		assert False, "Wrong Mode:{} for Run".format(mode)
 
 	losses = []
-	metric = infonce()
+	contrastive_fn = eval(args.loss + "()")
 	with trange(len(dataloader), desc="{}, Epoch {}: ".format(mode, epoch)) as t:
 		for data in dataloader:
 			data.to(device)
@@ -67,7 +72,7 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 			readout_pos = model((data.x_pos, data.edge_index_pos, data.x_pos_batch))
 			readout_neg = model((data.x_neg, data.edge_index_neg, data.x_neg_batch))
 
-			loss = metric(readout_anchor, readout_pos, readout_neg)
+			loss = contrastive_fn(readout_anchor, readout_pos, readout_neg)
 
 			if mode == "train":
 				# Backprop
@@ -86,23 +91,22 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 
 
 def main(args):
-	dataset = load_dataset(args)
+	dataset, feat_dim = load_dataset(args.dataset)
 	train_dataset, val_dataset, test_dataset = split_dataset(dataset)
 
 	train_loader = build_loader(args, train_dataset, "train")
 	val_loader = build_loader(args, val_dataset, "val")
 	test_loader = build_loader(args, test_dataset, "test")
 
-	feat_dim = dataset[0].x.shape[1]
 	model = Encoder(feat_dim, hidden_dim=128, n_layers=3, gnn=args.model).to(device)
 
 	optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
-	starting_epoch, best_train_loss, best_val_loss = -1, float("inf"), float("inf")
+	best_train_loss, best_val_loss = float("inf"), float("inf")
 
 	logger = SummaryWriter(logdir = os.path.join("runs", args.save))
 
-	for epoch in range(starting_epoch + 1, args.epochs):
+	for epoch in range(args.epochs):
 		train_loss = run(args, epoch, "train", train_loader, model, optimizer)
 		print('Train Epoch Loss: {}'.format(train_loss))
 		logger.add_scalar('Train Loss', train_loss, epoch)
@@ -122,11 +126,11 @@ def main(args):
 	best_epoch, best_train_loss, best_val_loss = model.load_checkpoint(os.path.join("logs", args.save), optimizer)
 	model.eval()
 
-	print("Train Loss (best model): {:.3f}".format(best_train_loss))
-	print("Val Loss (best model): {:.3f}".format(best_val_loss))
+	print("Train Loss at epoch {} (best model): {:.3f}".format(best_epoch, best_train_loss))
+	print("Val Loss at epoch {} (best model): {:.3f}".format(best_epoch, best_val_loss))
 
 	test_loss = run(args, best_epoch, "test", test_loader, model, optimizer)
-	print("Test Loss: {:.3f}".format(test_loss))
+	print("Test Loss at epoch {}: {:.3f}".format(best_epoch, test_loss))
 
 if __name__ == "__main__":
 

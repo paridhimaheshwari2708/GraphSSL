@@ -9,10 +9,10 @@ class infonce():
 
 	def __call__(self, embed, embed_pos, embed_neg):
 		dtype, device = embed.dtype, embed.device
-		posScores = self.cos(embed, embed_pos)
-		negScores = self.cos(embed, embed_neg)
+		scores_pos = self.cos(embed, embed_pos)
+		scores_neg = self.cos(embed, embed_neg)
 		# TODO: Add temperature
-		distances = self.sigmoid( (posScores - negScores))
+		distances = self.sigmoid( (scores_pos - scores_neg))
 		loss = self.crossEntropy(distances, torch.ones(distances.size(0), device=device, dtype=dtype))
 		return loss
 
