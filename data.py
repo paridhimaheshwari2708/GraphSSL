@@ -80,6 +80,7 @@ def load_dataset(name, expand_features=True):
 	elif name == "nci1":
 		dataset = TUDataset(root='/tmp/NCI1', name='NCI1', use_node_attr=True)
 
+	num_classes = dataset.num_classes
 	if dataset[0].x is None or expand_features:
 		max_degree = get_max_deg(dataset)
 		transform = CatDegOnehot(max_degree)
@@ -88,7 +89,7 @@ def load_dataset(name, expand_features=True):
 		dataset = [graph for graph in dataset]
 	feat_dim = dataset[0].num_node_features
 
-	return dataset, feat_dim
+	return dataset, feat_dim, num_classes
 
 
 def split_dataset(dataset):
@@ -109,6 +110,13 @@ def build_loader(args, dataset, subset, augment_list = []):
 						follow_batch=['x_anchor', 'x_pos'])
 	return loader
 
+def build_classification_loader(args, dataset, subset):
+	if(subset=='test'):
+		shuffle = False
+	else:
+		shuffle = True
+	loader = DataLoader(dataset, num_workers=args.num_workers, batch_size=args.batch_size, shuffle = shuffle)
+	return loader
 
 class MyDataset(Dataset):
 	def __init__(self, dataset, subset, augment_list):

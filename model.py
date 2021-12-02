@@ -404,3 +404,31 @@ class ResGCN(torch.nn.Module):
 			x = F.dropout(x, p=self.dropout, training=self.training)
 
 		return x, local_rep
+
+class PredictionModel(nn.Module):
+	def __init__(self, feat_dim, hidden_dim, n_layers, output_dim, args):
+		super(PredictionModel, self).__init__()
+		self.encoder = Encoder(feat_dim, hidden_dim=hidden_dim, n_layers=n_layers, gnn=args.model)
+		if(args.ss_task == True):
+			self.encoder.load_state_dict(torch.load(os.path.join(args.ss_encoder_model, 'best_model.ckpt')))
+			for param in self.encoder.parameters():
+				param.requires_grad = False
+
+		self.pred_head = nn.Linear(3*hidden_dim, output_dim)
+
+	def forward(self, data):
+		zg = self.encoder(data)
+		out = self.pred_head(zg)
+		out = nn.functional.log_softmax(out, dim=-1)
+		return out
+
+	def save_checkpoint(self, save_path, optimizer, epoch, best_train_loss, best_val_loss, is_best):
+		ckpt = {}
+		ckpt['state'] = self.state_dict()
+		ckpt['epoch'] = epoch
+		ckpt['optimizer_state'] = optimizer.state_dict()
+		ckpt['best_train_loss'] = best_train_loss
+		ckpt['best_val_loss'] = best_val_loss
+		torch.save(ckpt, os.path.join(save_path, 'pred_model.ckpt'))
+		if is_best:
+			torch.save(ckpt, os.path.join(save_path, 'best_pred_model.ckpt'))
