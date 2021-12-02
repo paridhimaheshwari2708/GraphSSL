@@ -1,12 +1,14 @@
 import torch
-import numpy as np
-from torch_geometric.utils import to_dense_adj, dense_to_sparse, subgraph
-from sklearn.preprocessing import MinMaxScaler
-from torch_geometric.data import Batch, Data
 import random
+import numpy as np
+from torch_geometric.data import Batch, Data
+from sklearn.preprocessing import MinMaxScaler
+from torch_geometric.utils import to_dense_adj, dense_to_sparse, subgraph
+
 
 class EdgePerturbation():
-    '''Edge perturbation on the given graph or batched graphs. Class objects callable via 
+    """
+    Edge perturbation on the given graph or batched graphs. Class objects callable via 
     method :meth:`views_fn`.
     
     Args:
@@ -15,7 +17,8 @@ class EdgePerturbation():
         drop (bool, optional): Set :obj:`True` if randomly drop edges in a given graph.
             (default: :obj:`False`)
         ratio (float, optional): Percentage of edges to add or drop. (default: :obj:`0.1`)
-    '''
+    """
+
     def __init__(self, add=True, drop=False, ratio=0.1):
         self.add = add
         self.drop = drop
@@ -34,8 +37,7 @@ class EdgePerturbation():
         idx_add = torch.tensor([]).reshape(2, -1).long()
 
         if self.drop:
-            idx_remain = edge_index[:, np.random.choice(edge_num, edge_num-perturb_num, 
-                                                        replace=False)]
+            idx_remain = edge_index[:, np.random.choice(edge_num, edge_num-perturb_num, replace=False)]
 
         if self.add:
             idx_add = torch.randint(node_num, (2, perturb_num))
@@ -46,13 +48,15 @@ class EdgePerturbation():
         return Data(x=data.x, edge_index=new_edge_index)
 
     def views_fn(self, data):
-        r"""Method to be called when :class:`EdgePerturbation` object is called.
+        """
+        Method to be called when :class:`EdgePerturbation` object is called.
         
         Args:
             data (:class:`torch_geometric.data.Data`): The input graph or batched graphs.
             
         :rtype: :class:`torch_geometric.data.Data`.  
         """
+
         if isinstance(data, Batch):
             dlist = [self.do_trans(d) for d in data.to_data_list()]
             return Batch.from_data_list(dlist)
@@ -61,7 +65,8 @@ class EdgePerturbation():
 
 
 class Diffusion():
-    '''Diffusion on the given graph or batched graphs, used in 
+    """
+    Diffusion on the given graph or batched graphs, used in 
     `MVGRL <https://arxiv.org/pdf/2006.05582v1.pdf>`_. Class objects callable via 
     method :meth:`views_fn`.
     
@@ -73,7 +78,8 @@ class Diffusion():
         t (float, optinal): Diffusion time. (default: :obj:`5`)
         add_self_loop (bool, optional): Set True to add self-loop to edge_index.
             (default: :obj:`True`)
-    '''
+    """
+
     def __init__(self, mode='ppr', alpha=0.2, t=5, add_self_loop=True):
         self.mode = mode
         self.alpha = alpha
@@ -109,16 +115,17 @@ class Diffusion():
         edge_ind, edge_attr = dense_to_sparse(diff_adj)
 
         return Data(x=data.x, edge_index=edge_ind, edge_attr=edge_attr)
-    
 
     def views_fn(self, data):
-        r"""Method to be called when :class:`Diffusion` object is called.
+        """
+        Method to be called when :class:`Diffusion` object is called.
         
         Args:
             data (:class:`torch_geometric.data.Data`): The input graph or batched graphs.
             
         :rtype: :class:`torch_geometric.data.Data`.  
         """
+
         if isinstance(data, Batch):
             dlist = [self.do_trans(d) for d in data.to_data_list()]
             return Batch.from_data_list(dlist)
@@ -126,9 +133,9 @@ class Diffusion():
             return self.do_trans(data)
 
 
-
 class DiffusionWithSample():
-    '''Diffusion with node sampling on the given graph for node-level datasets, used in 
+    """
+    Diffusion with node sampling on the given graph for node-level datasets, used in 
     `MVGRL <https://arxiv.org/pdf/2006.05582v1.pdf>`_.  Class objects callable via method 
     :meth:`views_fn`.
     
@@ -143,7 +150,8 @@ class DiffusionWithSample():
         t (float, optinal): Diffusion time. (default: :obj:`5`)
         add_self_loop (bool, optional): Set True to add self-loop to edge_index.
             (default: :obj:`True`)
-    '''
+    """
+
     def __init__(self, sample_size=2000, batch_size=4, mode='ppr', 
                  alpha=0.2, t=5, epsilon=False, add_self_loop=True):
         self.sample_size = sample_size
@@ -158,13 +166,15 @@ class DiffusionWithSample():
         return self.views_fn(data)
     
     def views_fn(self, data):
-        r"""Method to be called when :class:`DiffusionWithSample` object is called.
+        """
+        Method to be called when :class:`DiffusionWithSample` object is called.
         
         Args:
             data (:class:`torch_geometric.data.Data`): The input graph or batched graphs.
             
         :rtype: :class:`torch_geometric.data.Data`.  
         """
+
         node_num, _ = data.x.size()
         if self.add_self_loop:
             sl = torch.tensor([[n, n] for n in range(node_num)]).t()
@@ -224,12 +234,14 @@ class DiffusionWithSample():
 
 
 class UniformSample():
-    r"""Uniformly node dropping on the given graph or batched graphs. 
+    """
+    Uniformly node dropping on the given graph or batched graphs. 
     Class objects callable via method :meth:`views_fn`.
     
     Args:
         ratio (float, optinal): Ratio of nodes to be dropped. (default: :obj:`0.1`)
     """
+
     def __init__(self, ratio=0.1):
         self.ratio = ratio
     
@@ -249,13 +261,15 @@ class UniformSample():
         return Data(x=data.x[mask_nondrop], edge_index=edge_index)
     
     def views_fn(self, data):
-        r"""Method to be called when :class:`UniformSample` object is called.
+        """
+        Method to be called when :class:`UniformSample` object is called.
         
         Args:
             data (:class:`torch_geometric.data.Data`): The input graph or batched graphs.
             
         :rtype: :class:`torch_geometric.data.Data`.  
         """
+
         if isinstance(data, Batch):
             dlist = [self.do_trans(d) for d in data.to_data_list()]
             return Batch.from_data_list(dlist)
@@ -263,9 +277,9 @@ class UniformSample():
             return self.do_trans(data)
 
 
-
 class RWSample():
-    """Subgraph sampling based on random walk on the given graph or batched graphs.
+    """
+    Subgraph sampling based on random walk on the given graph or batched graphs.
     Class objects callable via method :meth:`views_fn`.
     
     Args:
@@ -274,6 +288,7 @@ class RWSample():
         add_self_loop (bool, optional): Set True to add self-loop to edge_index.
             (default: :obj:`False`)
     """
+
     def __init__(self, ratio=0.1, add_self_loop=False):
         self.ratio = ratio
         self.add_self_loop = add_self_loop
@@ -316,21 +331,25 @@ class RWSample():
         return Data(x=data.x[mask_nondrop], edge_index=edge_index)
 
     def views_fn(self, data):
-        r"""Method to be called when :class:`RWSample` object is called.
+        """
+        Method to be called when :class:`RWSample` object is called.
         
         Args:
             data (:class:`torch_geometric.data.Data`): The input graph or batched graphs.
             
         :rtype: :class:`torch_geometric.data.Data`.  
         """
+
         if isinstance(data, Batch):
             dlist = [self.do_trans(d) for d in data.to_data_list()]
             return Batch.from_data_list(dlist)
         elif isinstance(data, Data):
             return self.do_trans(data)
 
+
 class NodeAttrMask():
-    '''Node attribute masking on the given graph or batched graphs. 
+    """
+    Node attribute masking on the given graph or batched graphs. 
     Class objects callable via method :meth:`views_fn`.
     
     Args:
@@ -344,7 +363,8 @@ class NodeAttrMask():
             (default: :obj:`0.5`)
         mask_std (float, optional): Standard deviation of the distribution to generate masking values. 
             Must be non-negative. (default: :obj:`0.5`)
-    '''
+    """
+
     def __init__(self, mode='whole', mask_ratio=0.1, mask_mean=0.5, mask_std=0.5, return_mask=False):
         self.mode = mode
         self.mask_ratio = mask_ratio
@@ -393,13 +413,15 @@ class NodeAttrMask():
             return Data(x=x, edge_index=data.edge_index)
 
     def views_fn(self, data):
-        r"""Method to be called when :class:`NodeAttrMask` object is called.
+        """
+        Method to be called when :class:`NodeAttrMask` object is called.
         
         Args:
             data (:class:`torch_geometric.data.Data`): The input graph or batched graphs.
             
         :rtype: :class:`torch_geometric.data.Data`.  
         """
+
         if isinstance(data, Batch):
             dlist = [self.do_trans(d) for d in data.to_data_list()]
             return Batch.from_data_list(dlist)

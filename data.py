@@ -7,10 +7,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.utils import degree
 from torch_geometric.loader import DataLoader
-from torch_geometric.data import Data, Dataset
 from torch_geometric.datasets import TUDataset
-from torch_geometric.utils import degree
-from torch_geometric.data import Batch, Data
+from torch_geometric.data import Data, Batch, Dataset
+
 from view_functions import *
 
 DATA_SPLIT = [0.7, 0.2, 0.1]
@@ -110,13 +109,12 @@ def build_loader(args, dataset, subset, augment_list = []):
 						follow_batch=['x_anchor', 'x_pos'])
 	return loader
 
+
 def build_classification_loader(args, dataset, subset):
-	if(subset=='test'):
-		shuffle = False
-	else:
-		shuffle = True
-	loader = DataLoader(dataset, num_workers=args.num_workers, batch_size=args.batch_size, shuffle = shuffle)
+	shuffle = (subset != "test")
+	loader = DataLoader(dataset, num_workers=args.num_workers, batch_size=args.batch_size, shuffle=shuffle)
 	return loader
+
 
 class MyDataset(Dataset):
 	def __init__(self, dataset, subset, augment_list):
@@ -124,54 +122,42 @@ class MyDataset(Dataset):
 
 		self.dataset = dataset
 		self.augment_list = augment_list
+
+		self.augment_functions = []
+		for augment in self.augment_list:
+			if augment == "edge_perturbation":
+				function = EdgePerturbation()
+			elif augment == "diffusion":
+				function = Diffusion()
+			elif augment == "diffusion_with_sample":
+				function = DiffusionWithSample()
+			elif augment == "node_dropping":
+				function = UniformSample()
+			elif augment == "random_walk_subgraph":
+				function = RWSample()
+			elif augment == "node_attr_mask":
+				function = NodeAttrMask()
+			self.augment_functions.append(function)
+				
 		print('# samples in {} subset: {}'.format(subset, len(self.dataset)))
 
 	def get_positive_sample(self, current_graph):
-
-		'''
+		"""
 		Possible augmentations include the following:
-
-		edge_perturbation
-		diffusion
-		diffusion_with_sample
-		node_dropping
-		random_walk_subgraph
-		node_attr_mask
-		'''
+			edge_perturbation
+			diffusion
+			diffusion_with_sample
+			node_dropping
+			random_walk_subgraph
+			node_attr_mask
+		"""
 
 		graph_temp = current_graph
-
-		for augment in self.augment_list:
-
-			if(augment == "edge_perturbation"):
-				edge_perturbation = EdgePerturbation()
-				graph_temp = edge_perturbation.views_fn(graph_temp)
-
-			if(augment == "diffusion"):
-				diffusion = Diffusion()
-				graph_temp = diffusion.views_fn(graph_temp)
-			
-			if(augment == "diffusion_with_sample"):
-				diffusionws = DiffusionWithSample()
-				graph_temp = diffusionws.views_fn(graph_temp)
-
-			if(augment == "node_dropping"):
-				nd = UniformSample()
-				graph_temp = nd.views_fn(graph_temp)
-			
-			if(augment == "random_walk_subgraph"):
-				randomwalk = RWSample()
-				graph_temp = randomwalk.views_fn(graph_temp)
-			
-			if(augment == "node_attr_mask"):
-				node_mask = NodeAttrMask()
-				graph_temp = node_mask.views_fn(graph_temp)
-
+		for function in self.augment_functions:
+			graph_temp = function.views_fn(graph_temp)
 		return graph_temp
 
-
 	def get(self, idx):
-
 		graph_anchor = self.dataset[idx]
 		graph_pos = self.get_positive_sample(graph_anchor)
 		return PairData(graph_anchor.edge_index, graph_anchor.x, graph_pos.edge_index, graph_pos.x)

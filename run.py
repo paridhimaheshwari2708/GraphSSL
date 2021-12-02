@@ -34,10 +34,11 @@ class Options:
 		self.parser.add_argument("--batch_size", dest="batch_size", action="store", default=64, type=int)
 		self.parser.add_argument("--num_workers", dest="num_workers", action="store", default=8, type=int)
 		self.parser.add_argument("--dataset", dest="dataset", action="store", required=True, type=str, \
-			choices=["proteins", "enzymes", "reddit_binary", "reddit_multi", "imdb_binary", "imdb_multi", "dd", "mutag", "nci1"])
+			choices=["proteins", "enzymes", "collab" "reddit_binary", "reddit_multi", "imdb_binary", "imdb_multi", "dd", "mutag", "nci1"])
 		self.parser.add_argument("--model", dest="model", action="store", default="gcn", type=str, choices=["gcn", "gin", "resgcn"])
 		self.parser.add_argument("--loss", dest="loss", action="store", default="infonce", type=str, choices=["infonce", "jensen_shannon"])
-		self.parser.add_argument("--augment_list", dest="augment_list", nargs="*", default=["edge_perturbation", "node_dropping"], type=str, choices=["edge_perturbation", "diffusion", "diffusion_with_sample", "node_dropping", "random_walk_subgraph", "node_attr_mask"])
+		self.parser.add_argument("--augment_list", dest="augment_list", nargs="*", default=["edge_perturbation", "node_dropping"], type=str, \
+			choices=["edge_perturbation", "diffusion", "diffusion_with_sample", "node_dropping", "random_walk_subgraph", "node_attr_mask"])
 
 		self.parse()
 		self.check_args()

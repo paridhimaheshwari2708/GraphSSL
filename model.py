@@ -301,8 +301,8 @@ class ResGCN(torch.nn.Module):
 	def __init__(self, feat_dim, hidden_dim, num_feat_layers=1, num_conv_layers=3,
 				 num_fc_layers=2, xg_dim=None, bn=True, gfn=False, collapse=False, 
 				 residual=False, global_pool="sum", dropout=0, edge_norm=True):
-
 		super(ResGCN, self).__init__()
+
 		assert num_feat_layers == 1, "more feat layers are not now supported"
 		self.conv_residual = residual
 		self.fc_residual = False  # no skip-connections for fc layers.
@@ -405,23 +405,25 @@ class ResGCN(torch.nn.Module):
 
 		return x, local_rep
 
+
 class PredictionModel(nn.Module):
 	def __init__(self, feat_dim, hidden_dim, n_layers, output_dim, args):
 		super(PredictionModel, self).__init__()
+
 		self.encoder = Encoder(feat_dim, hidden_dim=hidden_dim, n_layers=n_layers, gnn=args.model)
-		if(args.ss_task == True):
-			encoder = torch.load(os.path.join(args.ss_encoder_model, 'best_model.ckpt'))['state']
-			self.encoder.load_state_dict(encoder)
+		if args.ss_task:
+			state = torch.load(os.path.join(args.ss_encoder_model, 'best_model.ckpt'))['state']
+			self.encoder.load_state_dict(state)
 			for param in self.encoder.parameters():
 				param.requires_grad = False
 
-		self.pred_head = nn.Linear(3*hidden_dim, output_dim)
+		self.classifier = nn.Linear(3*hidden_dim, output_dim)
 
 	def forward(self, data):
-		zg = self.encoder(data)
-		out = self.pred_head(zg)
-		# out = nn.functional.log_softmax(out, dim=-1)
-		return out
+		embeddings = self.encoder(data)
+		scores = self.classifier(embeddings)
+		# scores = nn.functional.log_softmax(scores, dim=-1)
+		return scores
 
 	def save_checkpoint(self, save_path, optimizer, epoch, best_train_loss, best_val_loss, is_best):
 		ckpt = {}
