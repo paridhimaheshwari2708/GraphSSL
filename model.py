@@ -410,7 +410,8 @@ class PredictionModel(nn.Module):
 		super(PredictionModel, self).__init__()
 		self.encoder = Encoder(feat_dim, hidden_dim=hidden_dim, n_layers=n_layers, gnn=args.model)
 		if(args.ss_task == True):
-			self.encoder.load_state_dict(torch.load(os.path.join(args.ss_encoder_model, 'best_model.ckpt')))
+			encoder = torch.load(os.path.join(args.ss_encoder_model, 'best_model.ckpt'))['state']
+			self.encoder.load_state_dict(encoder)
 			for param in self.encoder.parameters():
 				param.requires_grad = False
 
@@ -419,7 +420,7 @@ class PredictionModel(nn.Module):
 	def forward(self, data):
 		zg = self.encoder(data)
 		out = self.pred_head(zg)
-		out = nn.functional.log_softmax(out, dim=-1)
+		# out = nn.functional.log_softmax(out, dim=-1)
 		return out
 
 	def save_checkpoint(self, save_path, optimizer, epoch, best_train_loss, best_val_loss, is_best):
@@ -432,3 +433,12 @@ class PredictionModel(nn.Module):
 		torch.save(ckpt, os.path.join(save_path, 'pred_model.ckpt'))
 		if is_best:
 			torch.save(ckpt, os.path.join(save_path, 'best_pred_model.ckpt'))
+
+	def load_checkpoint(self, load_path, optimizer):
+		ckpt = torch.load(os.path.join(load_path, 'best_pred_model.ckpt'))
+		self.load_state_dict(ckpt['state'])
+		epoch = ckpt['epoch']
+		best_train_loss = ckpt['best_train_loss']
+		best_val_loss = ckpt['best_val_loss']
+		optimizer.load_state_dict(ckpt['optimizer_state'])
+		return epoch, best_train_loss, best_val_loss
