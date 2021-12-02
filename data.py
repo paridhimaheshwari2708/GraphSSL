@@ -103,21 +103,22 @@ def split_dataset(dataset):
 	return train_dataset, val_dataset, test_dataset
 
 
-def build_loader(args, dataset, subset):
-	loader = DataLoader(MyDataset(dataset, subset), \
+def build_loader(args, dataset, subset, augment_list = []):
+	loader = DataLoader(MyDataset(dataset, subset, augment_list), \
 						num_workers=args.num_workers, batch_size=args.batch_size, \
 						follow_batch=['x_anchor', 'x_pos'])
 	return loader
 
 
 class MyDataset(Dataset):
-	def __init__(self, dataset, subset):
+	def __init__(self, dataset, subset, augment_list):
 		super(MyDataset, self).__init__()
 
 		self.dataset = dataset
+		self.augment_list = augment_list
 		print('# samples in {} subset: {}'.format(subset, len(self.dataset)))
 
-	def get_positive_sample(self, current_graph, augment_list):
+	def get_positive_sample(self, current_graph):
 
 		'''
 		Possible augmentations include the following:
@@ -132,7 +133,7 @@ class MyDataset(Dataset):
 
 		graph_temp = current_graph
 
-		for augment in augment_list:
+		for augment in self.augment_list:
 
 			if(augment == "edge_perturbation"):
 				edge_perturbation = EdgePerturbation()
@@ -161,13 +162,10 @@ class MyDataset(Dataset):
 		return graph_temp
 
 
-	def get(self, idx, augment_list = []):
+	def get(self, idx):
 
-		if(len(augment_list)==0): 
-			graph_pos = self.dataset[0]
-		else:
-			graph_anchor = self.dataset[idx]
-			graph_pos = self.get_positive_sample(graph_anchor, augment_list)
+		graph_anchor = self.dataset[idx]
+		graph_pos = self.get_positive_sample(graph_anchor)
 		return PairData(graph_anchor.edge_index, graph_anchor.x, graph_pos.edge_index, graph_pos.x)
 
 	def len(self):

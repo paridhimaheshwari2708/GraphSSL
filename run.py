@@ -37,6 +37,7 @@ class Options:
 			choices=["proteins", "enzymes", "reddit_binary", "reddit_multi", "imdb_binary", "imdb_multi", "dd", "mutag", "nci1"])
 		self.parser.add_argument("--model", dest="model", action="store", default="gcn", type=str, choices=["gcn", "gin", "resgcn"])
 		self.parser.add_argument("--loss", dest="loss", action="store", default="infonce", type=str, choices=["infonce", "jensen_shannon"])
+		self.parser.add_argument("--augment_list", dest="augment_list", nargs="*", default=["edge_perturbation", "node_dropping"], type=str, choices=["edge_perturbation", "diffusion", "diffusion_with_sample", "node_dropping", "random_walk_subgraph", "node_attr_mask"])
 
 		self.parse()
 		self.check_args()
@@ -93,9 +94,9 @@ def main(args):
 	dataset, feat_dim = load_dataset(args.dataset)
 	train_dataset, val_dataset, test_dataset = split_dataset(dataset)
 
-	train_loader = build_loader(args, train_dataset, "train")
-	val_loader = build_loader(args, val_dataset, "val")
-	test_loader = build_loader(args, test_dataset, "test")
+	train_loader = build_loader(args, train_dataset, "train", args.augment_list)
+	val_loader = build_loader(args, val_dataset, "val", args.augment_list)
+	test_loader = build_loader(args, test_dataset, "test", args.augment_list)
 
 	model = Encoder(feat_dim, hidden_dim=128, n_layers=3, gnn=args.model).to(device)
 
