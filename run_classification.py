@@ -84,6 +84,7 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 			correct += int((pred == data.y).sum())
 			# print(pred.shape, labels.shape)
 
+
 			if mode == "train":
 				# Backprop
 				optimizer.zero_grad()
@@ -111,8 +112,8 @@ def main(args):
 	test_loader = build_classification_loader(args, test_dataset, "test")
 
 	# print(train_dataset[0])
-	# print(len(train_dataset))
-	# print(num_classes)
+	print("Dataset Split :", len(train_dataset), len(val_dataset), len(test_dataset) )
+	print( "Number of Classes: ", num_classes)
 
 	# for step, data in enumerate(train_loader):
 	# 	print(f'Step {step + 1}:')
@@ -148,6 +149,7 @@ def main(args):
 		# Save Model
 		is_best_loss = False
 		if val_loss < best_val_loss:
+			print("Best Validation Loss at Epoch :", epoch)
 			best_train_loss, best_val_loss, is_best_loss = train_loss, val_loss, True
 
 		model.save_checkpoint(os.path.join("logs", args.save), optimizer, epoch, best_train_loss, best_val_loss, is_best_loss)
