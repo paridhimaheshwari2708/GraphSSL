@@ -36,19 +36,6 @@ class infonce(nn.Module):
 		loss = - torch.log(loss).mean()
 		return loss
 
-	# def __init__(self):
-	# 	self.sigmoid = torch.nn.Sigmoid()
-	# 	self.cos = torch.nn.CosineSimilarity()
-	# 	self.crossEntropy = torch.nn.BCELoss()
-
-	# def forward(self, embed_anchor, embed_pos, embed_neg):
-	# 	dtype, device = embed.dtype, embed.device
-	# 	scores_pos = self.cos(embed, embed_pos)
-	# 	scores_neg = self.cos(embed, embed_neg)
-	# 	distances = self.sigmoid( (scores_pos - scores_neg) / self.tau)
-	# 	loss = self.crossEntropy(distances, torch.ones(distances.size(0), device=device, dtype=dtype))
-	# 	return loss
-
 
 class jensen_shannon(nn.Module):
 	"""
