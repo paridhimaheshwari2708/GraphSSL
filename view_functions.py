@@ -80,7 +80,7 @@ class Diffusion():
             (default: :obj:`True`)
     """
 
-    def __init__(self, mode='ppr', alpha=0.2, t=5, add_self_loop=True):
+    def __init__(self, mode="ppr", alpha=0.2, t=5, add_self_loop=True):
         self.mode = mode
         self.alpha = alpha
         self.t = t
@@ -101,12 +101,12 @@ class Diffusion():
         orig_adj = torch.where(orig_adj>1, torch.ones_like(orig_adj), orig_adj)
         d = torch.diag(torch.sum(orig_adj, 1))
 
-        if self.mode == 'ppr':
+        if self.mode == "ppr":
             dinv = torch.inverse(torch.sqrt(d))
             at = torch.matmul(torch.matmul(dinv, orig_adj), dinv)
             diff_adj = self.alpha * torch.inverse((torch.eye(orig_adj.shape[0]) - (1 - self.alpha) * at))
 
-        elif self.mode == 'heat':
+        elif self.mode == "heat":
             diff_adj = torch.exp(self.t * (torch.matmul(orig_adj, torch.inverse(d)) - 1))
 
         else:
@@ -152,7 +152,7 @@ class DiffusionWithSample():
             (default: :obj:`True`)
     """
 
-    def __init__(self, sample_size=2000, batch_size=4, mode='ppr', 
+    def __init__(self, sample_size=2000, batch_size=4, mode="ppr", 
                  alpha=0.2, t=5, epsilon=False, add_self_loop=True):
         self.sample_size = sample_size
         self.batch_size = batch_size
@@ -186,12 +186,12 @@ class DiffusionWithSample():
         orig_adj = torch.where(orig_adj>1, torch.ones_like(orig_adj), orig_adj)
         d = torch.diag(torch.sum(orig_adj, 1))
 
-        if self.mode == 'ppr':
+        if self.mode == "ppr":
             dinv = torch.inverse(torch.sqrt(d))
             at = torch.matmul(torch.matmul(dinv, orig_adj), dinv)
             diff_adj = self.alpha * torch.inverse((torch.eye(orig_adj.shape[0]) - (1 - self.alpha) * at))
 
-        elif self.mode == 'heat':
+        elif self.mode == "heat":
             diff_adj = torch.exp(self.t * (torch.matmul(orig_adj, torch.inverse(d)) - 1))
 
         else:
@@ -380,7 +380,7 @@ class NodeAttrMask():
         node_num, feat_dim = data.x.size()
         x = data.x.detach().clone()
 
-        if self.mode == 'whole':
+        if self.mode == "whole":
             mask = torch.zeros(node_num)
             mask_num = int(node_num * self.mask_ratio)
             idx_mask = np.random.choice(node_num, mask_num, replace=False)
@@ -388,7 +388,7 @@ class NodeAttrMask():
                                                         size=(mask_num, feat_dim)), dtype=torch.float32)
             mask[idx_mask] = 1
 
-        elif self.mode == 'partial':
+        elif self.mode == "partial":
             mask = torch.zeros((node_num, feat_dim))
             for i in range(node_num):
                 for j in range(feat_dim):
@@ -397,7 +397,7 @@ class NodeAttrMask():
                                                                 scale=self.mask_std), dtype=torch.float32)
                         mask[i][j] = 1
 
-        elif self.mode == 'onehot':
+        elif self.mode == "onehot":
             mask = torch.zeros(node_num)
             mask_num = int(node_num * self.mask_ratio)
             idx_mask = np.random.choice(node_num, mask_num, replace=False)

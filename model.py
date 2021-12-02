@@ -53,16 +53,16 @@ class Encoder(torch.nn.Module):
 	>>> encoder = Encoder(feat_dim, 128, n_layers=5, node_level=True, graph_level=False)
 	>>> encoder(some_batched_data) # a tuple of graph-level and node-level embeddings
 	"""
-	def __init__(self, feat_dim, hidden_dim, n_layers=5, pool='sum', 
-				 gnn='gcn', bn=True, act='relu', bias=True, xavier=True, 
+	def __init__(self, feat_dim, hidden_dim, n_layers=5, pool="sum", 
+				 gnn="gcn", bn=True, act="relu", bias=True, xavier=True, 
 				 node_level=False, graph_level=True, edge_weight=False):
 		super(Encoder, self).__init__()
 
-		if gnn == 'gcn':
+		if gnn == "gcn":
 			self.encoder = GCN(feat_dim, hidden_dim, n_layers, pool, bn, act, bias, xavier, edge_weight)
-		elif gnn == 'gin':
+		elif gnn == "gin":
 			self.encoder = GIN(feat_dim, hidden_dim, n_layers, pool, bn, act)
-		elif gnn == 'resgcn':
+		elif gnn == "resgcn":
 			self.encoder = ResGCN(feat_dim, hidden_dim, num_conv_layers=n_layers, global_pool=pool)
 
 		self.node_level = node_level
@@ -79,27 +79,27 @@ class Encoder(torch.nn.Module):
 
 	def save_checkpoint(self, save_path, optimizer, epoch, best_train_loss, best_val_loss, is_best):
 		ckpt = {}
-		ckpt['state'] = self.state_dict()
-		ckpt['epoch'] = epoch
-		ckpt['optimizer_state'] = optimizer.state_dict()
-		ckpt['best_train_loss'] = best_train_loss
-		ckpt['best_val_loss'] = best_val_loss
-		torch.save(ckpt, os.path.join(save_path, 'model.ckpt'))
+		ckpt["state"] = self.state_dict()
+		ckpt["epoch"] = epoch
+		ckpt["optimizer_state"] = optimizer.state_dict()
+		ckpt["best_train_loss"] = best_train_loss
+		ckpt["best_val_loss"] = best_val_loss
+		torch.save(ckpt, os.path.join(save_path, "model.ckpt"))
 		if is_best:
-			torch.save(ckpt, os.path.join(save_path, 'best_model.ckpt'))
+			torch.save(ckpt, os.path.join(save_path, "best_model.ckpt"))
 
 	def load_checkpoint(self, load_path, optimizer):
-		ckpt = torch.load(os.path.join(load_path, 'best_model.ckpt'))
-		self.load_state_dict(ckpt['state'])
-		epoch = ckpt['epoch']
-		best_train_loss = ckpt['best_train_loss']
-		best_val_loss = ckpt['best_val_loss']
-		optimizer.load_state_dict(ckpt['optimizer_state'])
+		ckpt = torch.load(os.path.join(load_path, "best_model.ckpt"))
+		self.load_state_dict(ckpt["state"])
+		epoch = ckpt["epoch"]
+		best_train_loss = ckpt["best_train_loss"]
+		best_val_loss = ckpt["best_val_loss"]
+		optimizer.load_state_dict(ckpt["optimizer_state"])
 		return epoch, best_train_loss, best_val_loss
 
 
 class GCN(torch.nn.Module):
-	def __init__(self, feat_dim, hidden_dim, n_layers=3, pool='sum', bn=False, act='relu', bias=True, xavier=True, edge_weight=False):
+	def __init__(self, feat_dim, hidden_dim, n_layers=3, pool="sum", bn=False, act="relu", bias=True, xavier=True, edge_weight=False):
 		super(GCN, self).__init__()
 
 		if bn:
@@ -114,7 +114,7 @@ class GCN(torch.nn.Module):
 		self.normalize = not edge_weight
 		self.add_self_loops = not edge_weight
 
-		if act == 'prelu':
+		if act == "prelu":
 			a = torch.nn.PReLU()
 		else:
 			a = torch.nn.ReLU()
@@ -155,7 +155,7 @@ class GCN(torch.nn.Module):
 				x = self.bns[i](x)
 			xs.append(x)
 
-		if self.pool == 'sum':
+		if self.pool == "sum":
 			xpool = [global_add_pool(x, batch) for x in xs]
 		else:
 			xpool = [global_mean_pool(x, batch) for x in xs]
@@ -165,7 +165,7 @@ class GCN(torch.nn.Module):
 
 
 class GIN(torch.nn.Module):
-	def __init__(self, feat_dim, hidden_dim, n_layers=3, pool='sum', bn=False, act='relu', bias=True, xavier=True):
+	def __init__(self, feat_dim, hidden_dim, n_layers=3, pool="sum", bn=False, act="relu", bias=True, xavier=True):
 		super(GIN, self).__init__()
 
 		if bn:
@@ -176,7 +176,7 @@ class GIN(torch.nn.Module):
 		self.n_layers = n_layers
 		self.pool = pool
 
-		self.act = torch.nn.PReLU() if act == 'prelu' else torch.nn.ReLU()
+		self.act = torch.nn.PReLU() if act == "prelu" else torch.nn.ReLU()
 
 		for i in range(n_layers):
 			start_dim = hidden_dim if i else feat_dim
@@ -207,7 +207,7 @@ class GIN(torch.nn.Module):
 				x = self.bns[i](x)
 			xs.append(x)
 
-		if self.pool == 'sum':
+		if self.pool == "sum":
 			xpool = [global_add_pool(x, batch) for x in xs]
 		else:
 			xpool = [global_mean_pool(x, batch) for x in xs]
@@ -218,7 +218,7 @@ class GIN(torch.nn.Module):
 
 class ResGCNConv(MessagePassing):
 	def __init__(self, in_channels, out_channels, improved=False, cached=False, bias=True, edge_norm=True, gfn=False):
-		super(ResGCNConv, self).__init__('add')
+		super(ResGCNConv, self).__init__("add")
 
 		self.in_channels = in_channels
 		self.out_channels = out_channels
@@ -233,7 +233,7 @@ class ResGCNConv(MessagePassing):
 		if bias:
 			self.bias = Parameter(torch.Tensor(out_channels))
 		else:
-			self.register_parameter('bias', None)
+			self.register_parameter("bias", None)
 
 		self.weights_init()
 
@@ -263,7 +263,7 @@ class ResGCNConv(MessagePassing):
 		
 		deg = scatter_add(edge_weight, row, dim=0, dim_size=num_nodes)
 		deg_inv_sqrt = deg.pow(-0.5)
-		deg_inv_sqrt[deg_inv_sqrt == float('inf')] = 0
+		deg_inv_sqrt[deg_inv_sqrt == float("inf")] = 0
 
 		return edge_index, deg_inv_sqrt[row] * edge_weight * deg_inv_sqrt[col]
 
@@ -294,7 +294,7 @@ class ResGCNConv(MessagePassing):
 		return aggr_out
 
 	def __repr__(self):
-		return '{}({}, {})'.format(self.__class__.__name__, self.in_channels, self.out_channels)
+		return "{}({}, {})".format(self.__class__.__name__, self.in_channels, self.out_channels)
 
 
 class ResGCN(torch.nn.Module):
@@ -411,9 +411,10 @@ class PredictionModel(nn.Module):
 		super(PredictionModel, self).__init__()
 
 		self.encoder = Encoder(feat_dim, hidden_dim=hidden_dim, n_layers=n_layers, gnn=args.model)
-		if args.ss_task:
-			state = torch.load(os.path.join(args.ss_encoder_model, 'best_model.ckpt'))['state']
-			self.encoder.load_state_dict(state)
+
+		if args.ss_encoder:
+			ckpt = torch.load(os.path.join("logs", args.ss_encoder, "best_model.ckpt"))
+			self.encoder.load_state_dict(ckpt["state"])
 			for param in self.encoder.parameters():
 				param.requires_grad = False
 
@@ -425,25 +426,24 @@ class PredictionModel(nn.Module):
 	def forward(self, data):
 		embeddings = self.encoder(data)
 		scores = self.classifier(embeddings)
-		# scores = nn.functional.log_softmax(scores, dim=-1)
 		return scores
 
 	def save_checkpoint(self, save_path, optimizer, epoch, best_train_loss, best_val_loss, is_best):
 		ckpt = {}
-		ckpt['state'] = self.state_dict()
-		ckpt['epoch'] = epoch
-		ckpt['optimizer_state'] = optimizer.state_dict()
-		ckpt['best_train_loss'] = best_train_loss
-		ckpt['best_val_loss'] = best_val_loss
-		torch.save(ckpt, os.path.join(save_path, 'pred_model.ckpt'))
+		ckpt["state"] = self.state_dict()
+		ckpt["epoch"] = epoch
+		ckpt["optimizer_state"] = optimizer.state_dict()
+		ckpt["best_train_loss"] = best_train_loss
+		ckpt["best_val_loss"] = best_val_loss
+		torch.save(ckpt, os.path.join(save_path, "pred_model.ckpt"))
 		if is_best:
-			torch.save(ckpt, os.path.join(save_path, 'best_pred_model.ckpt'))
+			torch.save(ckpt, os.path.join(save_path, "best_pred_model.ckpt"))
 
 	def load_checkpoint(self, load_path, optimizer):
-		ckpt = torch.load(os.path.join(load_path, 'best_pred_model.ckpt'))
-		self.load_state_dict(ckpt['state'])
-		epoch = ckpt['epoch']
-		best_train_loss = ckpt['best_train_loss']
-		best_val_loss = ckpt['best_val_loss']
-		optimizer.load_state_dict(ckpt['optimizer_state'])
+		ckpt = torch.load(os.path.join(load_path, "best_pred_model.ckpt"))
+		self.load_state_dict(ckpt["state"])
+		epoch = ckpt["epoch"]
+		best_train_loss = ckpt["best_train_loss"]
+		best_val_loss = ckpt["best_val_loss"]
+		optimizer.load_state_dict(ckpt["optimizer_state"])
 		return epoch, best_train_loss, best_val_loss

@@ -3,6 +3,7 @@ import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class infonce(nn.Module):
 	"""
 	The InfoNCE (NT-XENT) loss in contrastive learning.
@@ -23,12 +24,12 @@ class infonce(nn.Module):
 		"""
 		
 		batch_size, _ = embed_anchor.size()
-		sim_matrix = torch.einsum('ik,jk->ij', embed_anchor, embed_positive)
+		sim_matrix = torch.einsum("ik,jk->ij", embed_anchor, embed_positive)
 		
 		if self.norm:
 			embed_anchor_abs = embed_anchor.norm(dim=1)
 			embed_positive_abs = embed_positive.norm(dim=1)
-			sim_matrix = sim_matrix / torch.einsum('i,j->ij', embed_anchor_abs, embed_positive_abs)
+			sim_matrix = sim_matrix / torch.einsum("i,j->ij", embed_anchor_abs, embed_positive_abs)
 			
 		sim_matrix = torch.exp(sim_matrix / self.tau)
 		pos_sim = sim_matrix[range(batch_size), range(batch_size)]

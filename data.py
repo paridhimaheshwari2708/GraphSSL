@@ -59,25 +59,25 @@ class CatDegOnehot(object):
 
 def load_dataset(name, expand_features=True):
 	if name == "proteins":
-		dataset = TUDataset(root='/tmp/PROTEINS', name='PROTEINS', use_node_attr=True)
+		dataset = TUDataset(root="/tmp/PROTEINS", name="PROTEINS", use_node_attr=True)
 	elif name == "enzymes":
-		dataset = TUDataset(root='/tmp/ENZYMES', name='ENZYMES', use_node_attr=True)
+		dataset = TUDataset(root="/tmp/ENZYMES", name="ENZYMES", use_node_attr=True)
 	elif name == "collab":
-		dataset = TUDataset(root='/tmp/COLLAB', name='COLLAB', use_node_attr=True)
+		dataset = TUDataset(root="/tmp/COLLAB", name="COLLAB", use_node_attr=True)
 	elif name == "reddit_binary":
-		dataset = TUDataset(root='/tmp/REDDIT-BINARY', name='REDDIT-BINARY', use_node_attr=True)
+		dataset = TUDataset(root="/tmp/REDDIT-BINARY", name="REDDIT-BINARY", use_node_attr=True)
 	elif name == "reddit_multi":
-		dataset = TUDataset(root='/tmp/REDDIT-MULTI-5K', name='REDDIT-MULTI-5K', use_node_attr=True)
+		dataset = TUDataset(root="/tmp/REDDIT-MULTI-5K", name="REDDIT-MULTI-5K", use_node_attr=True)
 	elif name == "imdb_binary":
-		dataset = TUDataset(root='/tmp/IMDB-BINARY', name='IMDB-BINARY', use_node_attr=True)
+		dataset = TUDataset(root="/tmp/IMDB-BINARY", name="IMDB-BINARY", use_node_attr=True)
 	elif name == "imdb_multi":
-		dataset = TUDataset(root='/tmp/IMDB-MULTI', name='IMDB-MULTI', use_node_attr=True)
+		dataset = TUDataset(root="/tmp/IMDB-MULTI", name="IMDB-MULTI", use_node_attr=True)
 	elif name == "dd":
-		dataset = TUDataset(root='/tmp/DD', name='DD', use_node_attr=True)
+		dataset = TUDataset(root="/tmp/DD", name="DD", use_node_attr=True)
 	elif name == "mutag":
-		dataset = TUDataset(root='/tmp/MUTAG', name='MUTAG', use_node_attr=True)
+		dataset = TUDataset(root="/tmp/MUTAG", name="MUTAG", use_node_attr=True)
 	elif name == "nci1":
-		dataset = TUDataset(root='/tmp/NCI1', name='NCI1', use_node_attr=True)
+		dataset = TUDataset(root="/tmp/NCI1", name="NCI1", use_node_attr=True)
 
 	num_classes = dataset.num_classes
 	if dataset[0].x is None or expand_features:
@@ -103,10 +103,11 @@ def split_dataset(dataset):
 	return train_dataset, val_dataset, test_dataset
 
 
-def build_loader(args, dataset, subset, augment_list = []):
+def build_loader(args, dataset, subset, augment_list):
+	shuffle = (subset != "test")
 	loader = DataLoader(MyDataset(dataset, subset, augment_list), \
-						num_workers=args.num_workers, batch_size=args.batch_size, \
-						follow_batch=['x_anchor', 'x_pos'])
+						num_workers=args.num_workers, batch_size=args.batch_size, shuffule=shuffle, \
+						follow_batch=["x_anchor", "x_pos"])
 	return loader
 
 
@@ -138,18 +139,18 @@ class MyDataset(Dataset):
 			elif augment == "node_attr_mask":
 				function = NodeAttrMask()
 			self.augment_functions.append(function)
-				
-		print('# samples in {} subset: {}'.format(subset, len(self.dataset)))
+
+		print("# samples in {} subset: {}".format(subset, len(self.dataset)))
 
 	def get_positive_sample(self, current_graph):
 		"""
 		Possible augmentations include the following:
-			edge_perturbation
-			diffusion
-			diffusion_with_sample
-			node_dropping
-			random_walk_subgraph
-			node_attr_mask
+			edge_perturbation()
+			diffusion()
+			diffusion_with_sample()
+			node_dropping()
+			random_walk_subgraph()
+			node_attr_mask()
 		"""
 
 		graph_temp = current_graph
@@ -176,9 +177,9 @@ class PairData(Data):
 		self.x_pos = x_pos
 
 	def __inc__(self, key, value, *args, **kwargs):
-		if key == 'edge_index_anchor':
+		if key == "edge_index_anchor":
 			return self.x_anchor.size(0)
-		if key == 'edge_index_pos':
+		if key == "edge_index_pos":
 			return self.x_pos.size(0)
 		else:
 			return super().__inc__(key, value, *args, **kwargs)

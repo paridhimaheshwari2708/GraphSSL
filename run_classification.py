@@ -9,7 +9,7 @@ from tensorboardX import SummaryWriter
 from data import *
 from model import *
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def set_seed(seed):
 	"""
@@ -34,7 +34,6 @@ class Options:
 			choices=["proteins", "enzymes", "collab", "reddit_binary", "reddit_multi", "imdb_binary", "imdb_multi", "dd", "mutag", "nci1"])
 		self.parser.add_argument("--num_workers", dest="num_workers", action="store", default=8, type=int)
 		self.parser.add_argument("--model", dest="model", action="store", default="gcn", type=str, choices=["gcn", "gin", "resgcn"])
-		self.parser.add_argument("--task", dest="task", action="store", default="graph", type=str, choices=["graph", "node"])
 		self.parser.add_argument("--ss_encoder_model", dest="ss_encoder_model", action="store", default="model", type=str)
 		self.parser.add_argument("--ss_task", dest="ss_task", action="store_true", default=False)
 
@@ -61,8 +60,7 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 		model.eval()
 	else:
 		assert False, "Wrong Mode:{} for Run".format(mode)
-	
-	# criterion = nn.BCEWithLogitsLoss()
+
 	criterion = torch.nn.CrossEntropyLoss()
 
 	losses = []
@@ -76,7 +74,6 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 
 			scores = model(data_input)
 			loss = criterion(scores, labels)
-
 
 			if mode == "train":
 				# Backprop
@@ -119,17 +116,16 @@ def main(args):
 
 	for epoch in range(args.epochs):
 		train_loss, train_acc = run(args, epoch, "train", train_loader, model, optimizer)
-		print('Train Epoch Loss: {}, Accuracy: {}'.format(train_loss, train_acc))
-		logger.add_scalar('Train Loss', train_loss, epoch)
+		print("Train Epoch Loss: {}, Accuracy: {}".format(train_loss, train_acc))
+		logger.add_scalar("Train Loss", train_loss, epoch)
 
 		val_loss, val_acc = run(args, epoch, "val", val_loader, model, optimizer)
-		print('Val Epoch Loss: {}, Accuracy: {}'.format(val_loss,val_acc))
-		logger.add_scalar('Val Loss', val_loss, epoch)
+		print("Val Epoch Loss: {}, Accuracy: {}".format(val_loss,val_acc))
+		logger.add_scalar("Val Loss", val_loss, epoch)
 
 		# Save Model
 		is_best_loss = False
 		if val_loss < best_val_loss:
-			print("Best Validation Loss at Epoch :", epoch)
 			best_train_loss, best_val_loss, is_best_loss = train_loss, val_loss, True
 
 		model.save_checkpoint(os.path.join("logs", args.save), optimizer, epoch, best_train_loss, best_val_loss, is_best_loss)

@@ -10,7 +10,7 @@ from data import *
 from loss import *
 from model import *
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def set_seed(seed):
 	"""
@@ -109,12 +109,12 @@ def main(args):
 
 	for epoch in range(args.epochs):
 		train_loss = run(args, epoch, "train", train_loader, model, optimizer)
-		print('Train Epoch Loss: {}'.format(train_loss))
-		logger.add_scalar('Train Loss', train_loss, epoch)
+		print("Train Epoch Loss: {}".format(train_loss))
+		logger.add_scalar("Train Loss", train_loss, epoch)
 
 		val_loss = run(args, epoch, "val", val_loader, model, optimizer)
-		print('Val Epoch Loss: {}'.format(val_loss))
-		logger.add_scalar('Val Loss', val_loss, epoch)
+		print("Val Epoch Loss: {}".format(val_loss))
+		logger.add_scalar("Val Loss", val_loss, epoch)
 
 		# Save Model
 		is_best_loss = False
