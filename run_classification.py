@@ -77,6 +77,7 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 			scores = model(data_input)
 			loss = criterion(scores, labels)
 
+
 			if mode == "train":
 				# Backprop
 				optimizer.zero_grad()
@@ -105,6 +106,9 @@ def main(args):
 	val_loader = build_classification_loader(args, val_dataset, "val")
 	test_loader = build_classification_loader(args, test_dataset, "test")
 
+	print("Dataset Split: {} {} {}".format(len(train_dataset), len(val_dataset), len(test_dataset)))
+	print("Number of Classes: {}".format(num_classes))
+
 	model = PredictionModel(feat_dim, hidden_dim=128, n_layers=3, output_dim=num_classes, args=args).to(device)
 
 	optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -125,6 +129,7 @@ def main(args):
 		# Save Model
 		is_best_loss = False
 		if val_loss < best_val_loss:
+			print("Best Validation Loss at Epoch :", epoch)
 			best_train_loss, best_val_loss, is_best_loss = train_loss, val_loss, True
 
 		model.save_checkpoint(os.path.join("logs", args.save), optimizer, epoch, best_train_loss, best_val_loss, is_best_loss)
