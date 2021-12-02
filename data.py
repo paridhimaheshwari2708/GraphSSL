@@ -9,6 +9,9 @@ from torch_geometric.loader import DataLoader
 from torch_geometric.data import Data, Dataset
 from torch_geometric.datasets import TUDataset
 from torch_geometric.utils import degree
+from torch_geometric.data import Batch, Data
+from view_functions import *
+
 
 
 DATA_SPLIT = [0.7, 0.2, 0.1]
@@ -115,10 +118,30 @@ class MyDataset(Dataset):
 		self.dataset = dataset
 		print('# samples in {} subset: {}'.format(subset, len(self.dataset)))
 
-	def get(self, idx):
-		graph_anchor = self.dataset[idx]
-		# TODO: Jian augmentations functions
-		graph_pos = self.dataset[0]
+	def get_positive_sample(self, current_graph, augment_list):
+
+		'''
+		Possible augmentations include the following:
+
+		edge_perturbation
+		diffusion
+		diffusion_with_sample
+		node_dropping
+		random_walk_subgraph
+		node_attr_mask
+		'''
+
+		view1 = EdgePerturbation()
+		return view1.views_fn(current_graph)
+
+
+	def get(self, idx, augment_list = []):
+
+		if(len(augment_list)==0): 
+			graph_pos = self.dataset[0]
+		else:
+			graph_anchor = self.dataset[idx]
+			graph_pos = self.get_positive_sample(graph_anchor, augment_list)
 		return PairData(graph_anchor.edge_index, graph_anchor.x, graph_pos.edge_index, graph_pos.x)
 
 	def len(self):
