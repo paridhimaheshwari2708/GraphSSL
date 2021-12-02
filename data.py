@@ -13,8 +13,6 @@ from torch_geometric.utils import degree
 from torch_geometric.data import Batch, Data
 from view_functions import *
 
-
-
 DATA_SPLIT = [0.7, 0.2, 0.1]
 
 
@@ -132,8 +130,35 @@ class MyDataset(Dataset):
 		node_attr_mask
 		'''
 
-		view1 = EdgePerturbation()
-		return view1.views_fn(current_graph)
+		graph_temp = current_graph
+
+		for augment in augment_list:
+
+			if(augment == "edge_perturbation"):
+				edge_perturbation = EdgePerturbation()
+				graph_temp = edge_perturbation.views_fn(graph_temp)
+
+			if(augment == "diffusion"):
+				diffusion = Diffusion()
+				graph_temp = diffusion.views_fn(graph_temp)
+			
+			if(augment == "diffusion_with_sample"):
+				diffusionws = DiffusionWithSample()
+				graph_temp = diffusionws.views_fn(graph_temp)
+
+			if(augment == "node_dropping"):
+				nd = UniformSample()
+				graph_temp = nd.views_fn(graph_temp)
+			
+			if(augment == "random_walk_subgraph"):
+				randomwalk = RWSample()
+				graph_temp = randomwalk.views_fn(graph_temp)
+			
+			if(augment == "node_attr_mask"):
+				node_mask = NodeAttrMask()
+				graph_temp = node_mask.views_fn(graph_temp)
+
+		return graph_temp
 
 
 	def get(self, idx, augment_list = []):
