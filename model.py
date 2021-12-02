@@ -415,7 +415,10 @@ class PredictionModel(nn.Module):
 			for param in self.encoder.parameters():
 				param.requires_grad = False
 
-		self.pred_head = nn.Linear(3*hidden_dim, output_dim)
+		if(args.model=="resgcn"):
+			self.pred_head = nn.Linear(hidden_dim, output_dim)
+		else:
+			self.pred_head = nn.Linear(3*hidden_dim, output_dim)
 
 	def forward(self, data):
 		zg = self.encoder(data)
