@@ -5,6 +5,7 @@ import numpy as np
 from tqdm import tqdm
 import torch.nn as nn
 import torch.nn.functional as F
+from torch_geometric.utils import degree
 from torch_geometric.loader import DataLoader
 from torch_geometric.data import Data, Dataset
 from torch_geometric.datasets import TUDataset
