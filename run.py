@@ -119,16 +119,15 @@ def main(args):
 		# Save Model
 		is_best_loss = False
 		if val_loss < best_val_loss:
-			best_train_loss, best_val_loss, is_best_loss = train_loss, val_loss, True
+			best_epoch, best_train_loss, best_val_loss, is_best_loss = epoch, train_loss, val_loss, True
 
 		model.save_checkpoint(os.path.join("logs", args.save), optimizer, epoch, best_train_loss, best_val_loss, is_best_loss)
 
-	################################################################################
-	best_epoch, best_train_loss, best_val_loss = model.load_checkpoint(os.path.join("logs", args.save), optimizer)
-	model.eval()
-
 	print("Train Loss at epoch {} (best model): {:.3f}".format(best_epoch, best_train_loss))
 	print("Val Loss at epoch {} (best model): {:.3f}".format(best_epoch, best_val_loss))
+
+	best_epoch, best_train_loss, best_val_loss = model.load_checkpoint(os.path.join("logs", args.save), optimizer)
+	model.eval()
 
 	test_loss = run(args, best_epoch, "test", test_loader, model, optimizer)
 	print("Test Loss at epoch {}: {:.3f}".format(best_epoch, test_loss))

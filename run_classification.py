@@ -27,6 +27,7 @@ class Options:
 	def __init__(self):
 		self.parser = argparse.ArgumentParser(description="Classification Task on Graphs")
 		self.parser.add_argument("--save", dest="save", action="store", required=True)
+		self.parser.add_argument("--load", dest="load", action="store", required=True)
 		self.parser.add_argument("--lr", dest="lr", action="store", default=0.001, type=float)
 		self.parser.add_argument("--epochs", dest="epochs", action="store", default=20, type=int)
 		self.parser.add_argument("--batch_size", dest="batch_size", action="store", default=64, type=int)
@@ -34,8 +35,6 @@ class Options:
 			choices=["proteins", "enzymes", "collab", "reddit_binary", "reddit_multi", "imdb_binary", "imdb_multi", "dd", "mutag", "nci1"])
 		self.parser.add_argument("--num_workers", dest="num_workers", action="store", default=8, type=int)
 		self.parser.add_argument("--model", dest="model", action="store", default="gcn", type=str, choices=["gcn", "gin", "resgcn"])
-		self.parser.add_argument("--ss_encoder_model", dest="ss_encoder_model", action="store", default="model", type=str)
-		self.parser.add_argument("--ss_task", dest="ss_task", action="store_true", default=False)
 
 		self.parse()
 		self.check_args()
@@ -126,16 +125,15 @@ def main(args):
 		# Save Model
 		is_best_loss = False
 		if val_loss < best_val_loss:
-			best_train_loss, best_val_loss, is_best_loss = train_loss, val_loss, True
+			best_epoch, best_train_loss, best_val_loss, is_best_loss = epoch, train_loss, val_loss, True
 
 		model.save_checkpoint(os.path.join("logs", args.save), optimizer, epoch, best_train_loss, best_val_loss, is_best_loss)
 
-	################################################################################
-	best_epoch, best_train_loss, best_val_loss = model.load_checkpoint(os.path.join("logs", args.save), optimizer)
-	model.eval()
-
 	print("Train Loss at epoch {} (best model): {:.3f}".format(best_epoch, best_train_loss))
 	print("Val Loss at epoch {} (best model): {:.3f}".format(best_epoch, best_val_loss))
+
+	best_epoch, best_train_loss, best_val_loss = model.load_checkpoint(os.path.join("logs", args.save), optimizer)
+	model.eval()
 
 	test_loss, test_accuracy = run(args, best_epoch, "test", test_loader, model, optimizer)
 	print("Test Loss at epoch {}: {:.3f}, Test Accuracy: {:.3f}".format(best_epoch, test_loss, test_accuracy))

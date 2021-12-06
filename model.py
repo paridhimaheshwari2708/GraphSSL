@@ -412,8 +412,8 @@ class PredictionModel(nn.Module):
 
 		self.encoder = Encoder(feat_dim, hidden_dim=hidden_dim, n_layers=n_layers, gnn=args.model)
 
-		if args.ss_encoder:
-			ckpt = torch.load(os.path.join("logs", args.ss_encoder, "best_model.ckpt"))
+		if args.load:
+			ckpt = torch.load(os.path.join("logs", args.load, "best_model.ckpt"))
 			self.encoder.load_state_dict(ckpt["state"])
 			for param in self.encoder.parameters():
 				param.requires_grad = False
