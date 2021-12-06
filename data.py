@@ -106,7 +106,7 @@ def split_dataset(dataset):
 def build_loader(args, dataset, subset, augment_list):
 	shuffle = (subset != "test")
 	loader = DataLoader(MyDataset(dataset, subset, augment_list), \
-						num_workers=args.num_workers, batch_size=args.batch_size, shuffule=shuffle, \
+						num_workers=args.num_workers, batch_size=args.batch_size, shuffle=shuffle, \
 						follow_batch=["x_anchor", "x_pos"])
 	return loader
 
