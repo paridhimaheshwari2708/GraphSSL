@@ -91,13 +91,13 @@ def load_dataset(name, expand_features=True):
 	return dataset, feat_dim, num_classes
 
 
-def split_dataset(dataset):
+def split_dataset(args, dataset):
 	random.shuffle(dataset)
 
 	n = len(dataset)
 	train_split, val_split, test_split = DATA_SPLIT
 
-	train_end = int(n * DATA_SPLIT[0])
+	train_end = int(n * DATA_SPLIT[0] * args.train_data_percent)
 	val_end = train_end + int(n * DATA_SPLIT[1])
 	train_dataset, val_dataset, test_dataset = [i for i in dataset[:train_end]], [i for i in dataset[train_end:val_end]], [i for i in dataset[val_end:]]
 	return train_dataset, val_dataset, test_dataset

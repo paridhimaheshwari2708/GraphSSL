@@ -39,6 +39,7 @@ class Options:
 		self.parser.add_argument("--loss", dest="loss", action="store", default="infonce", type=str, choices=["infonce", "jensen_shannon"])
 		self.parser.add_argument("--augment_list", dest="augment_list", nargs="*", default=["edge_perturbation", "node_dropping"], type=str, \
 			choices=["edge_perturbation", "diffusion", "diffusion_with_sample", "node_dropping", "random_walk_subgraph", "node_attr_mask"])
+		self.parser.add_argument("--train_data_percent", dest="train_data_percent", action="store", default=1.0, type=float)
 
 		self.parse()
 		self.check_args()
@@ -93,7 +94,7 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 
 def main(args):
 	dataset, feat_dim, num_classes = load_dataset(args.dataset)
-	train_dataset, val_dataset, test_dataset = split_dataset(dataset)
+	train_dataset, val_dataset, test_dataset = split_dataset(args, dataset)
 
 	train_loader = build_loader(args, train_dataset, "train", args.augment_list)
 	val_loader = build_loader(args, val_dataset, "val", args.augment_list)

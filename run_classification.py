@@ -27,7 +27,7 @@ class Options:
 	def __init__(self):
 		self.parser = argparse.ArgumentParser(description="Classification Task on Graphs")
 		self.parser.add_argument("--save", dest="save", action="store", required=True)
-		self.parser.add_argument("--load", dest="load", action="store", required=True)
+		self.parser.add_argument("--load", dest="load", action="store", required=False)
 		self.parser.add_argument("--lr", dest="lr", action="store", default=0.001, type=float)
 		self.parser.add_argument("--epochs", dest="epochs", action="store", default=20, type=int)
 		self.parser.add_argument("--batch_size", dest="batch_size", action="store", default=64, type=int)
@@ -35,6 +35,7 @@ class Options:
 			choices=["proteins", "enzymes", "collab", "reddit_binary", "reddit_multi", "imdb_binary", "imdb_multi", "dd", "mutag", "nci1"])
 		self.parser.add_argument("--num_workers", dest="num_workers", action="store", default=8, type=int)
 		self.parser.add_argument("--model", dest="model", action="store", default="gcn", type=str, choices=["gcn", "gin", "resgcn"])
+		self.parser.add_argument("--train_data_percent", dest="train_data_percent", action="store", default=1.0, type=float)
 
 		self.parse()
 		self.check_args()
@@ -96,7 +97,7 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 def main(args):
 	dataset, feat_dim, num_classes = load_dataset(args.dataset)
 
-	train_dataset, val_dataset, test_dataset = split_dataset(dataset)
+	train_dataset, val_dataset, test_dataset = split_dataset(args, dataset)
 
 	train_loader = build_classification_loader(args, train_dataset, "train")
 	val_loader = build_classification_loader(args, val_dataset, "val")
