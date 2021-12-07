@@ -94,11 +94,11 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 
 def main(args):
 	dataset, feat_dim, num_classes = load_dataset(args.dataset)
-	train_dataset, val_dataset, test_dataset = split_dataset(args, dataset)
+	train_dataset, val_dataset, test_dataset = split_dataset(dataset, args.train_data_percent)
 
-	train_loader = build_loader(args, train_dataset, "train", args.augment_list)
-	val_loader = build_loader(args, val_dataset, "val", args.augment_list)
-	test_loader = build_loader(args, test_dataset, "test", args.augment_list)
+	train_loader = build_loader(args, train_dataset, "train")
+	val_loader = build_loader(args, val_dataset, "val")
+	test_loader = build_loader(args, test_dataset, "test")
 
 	model = Encoder(feat_dim, hidden_dim=128, n_layers=3, gnn=args.model).to(device)
 

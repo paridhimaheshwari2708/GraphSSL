@@ -407,18 +407,18 @@ class ResGCN(torch.nn.Module):
 
 
 class PredictionModel(nn.Module):
-	def __init__(self, feat_dim, hidden_dim, n_layers, output_dim, args):
+	def __init__(self, feat_dim, hidden_dim, n_layers, output_dim, gnn, load=None):
 		super(PredictionModel, self).__init__()
 
-		self.encoder = Encoder(feat_dim, hidden_dim=hidden_dim, n_layers=n_layers, gnn=args.model)
+		self.encoder = Encoder(feat_dim, hidden_dim=hidden_dim, n_layers=n_layers, gnn=gnn)
 
-		if args.load:
-			ckpt = torch.load(os.path.join("logs", args.load, "best_model.ckpt"))
+		if load:
+			ckpt = torch.load(os.path.join("logs", load, "best_model.ckpt"))
 			self.encoder.load_state_dict(ckpt["state"])
 			for param in self.encoder.parameters():
 				param.requires_grad = False
 
-		if args.model == "resgcn":
+		if gnn == "resgcn":
 			self.classifier = nn.Linear(hidden_dim, output_dim)
 		else:
 			self.classifier = nn.Linear(3*hidden_dim, output_dim)

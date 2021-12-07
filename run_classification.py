@@ -27,7 +27,7 @@ class Options:
 	def __init__(self):
 		self.parser = argparse.ArgumentParser(description="Classification Task on Graphs")
 		self.parser.add_argument("--save", dest="save", action="store", required=True)
-		self.parser.add_argument("--load", dest="load", action="store", required=False)
+		self.parser.add_argument("--load", dest="load", action="store")
 		self.parser.add_argument("--lr", dest="lr", action="store", default=0.001, type=float)
 		self.parser.add_argument("--epochs", dest="epochs", action="store", default=20, type=int)
 		self.parser.add_argument("--batch_size", dest="batch_size", action="store", default=64, type=int)
@@ -97,7 +97,7 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 def main(args):
 	dataset, feat_dim, num_classes = load_dataset(args.dataset)
 
-	train_dataset, val_dataset, test_dataset = split_dataset(args, dataset)
+	train_dataset, val_dataset, test_dataset = split_dataset(dataset, args.train_data_percent)
 
 	train_loader = build_classification_loader(args, train_dataset, "train")
 	val_loader = build_classification_loader(args, val_dataset, "val")
@@ -106,7 +106,7 @@ def main(args):
 	print("Dataset Split: {} {} {}".format(len(train_dataset), len(val_dataset), len(test_dataset)))
 	print("Number of Classes: {}".format(num_classes))
 
-	model = PredictionModel(feat_dim, hidden_dim=128, n_layers=3, output_dim=num_classes, args=args).to(device)
+	model = PredictionModel(feat_dim, hidden_dim=128, n_layers=3, output_dim=num_classes, gnn=args.model, load=args.load).to(device)
 
 	optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 

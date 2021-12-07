@@ -91,21 +91,21 @@ def load_dataset(name, expand_features=True):
 	return dataset, feat_dim, num_classes
 
 
-def split_dataset(args, dataset):
+def split_dataset(dataset, train_data_percent):
 	random.shuffle(dataset)
 
 	n = len(dataset)
 	train_split, val_split, test_split = DATA_SPLIT
 
-	train_end = int(n * DATA_SPLIT[0] * args.train_data_percent)
+	train_end = int(n * DATA_SPLIT[0] * train_data_percent)
 	val_end = train_end + int(n * DATA_SPLIT[1])
 	train_dataset, val_dataset, test_dataset = [i for i in dataset[:train_end]], [i for i in dataset[train_end:val_end]], [i for i in dataset[val_end:]]
 	return train_dataset, val_dataset, test_dataset
 
 
-def build_loader(args, dataset, subset, augment_list):
+def build_loader(args, dataset, subset):
 	shuffle = (subset != "test")
-	loader = DataLoader(MyDataset(dataset, subset, augment_list), \
+	loader = DataLoader(MyDataset(dataset, subset, args.augment_list), \
 						num_workers=args.num_workers, batch_size=args.batch_size, shuffle=shuffle, \
 						follow_batch=["x_anchor", "x_pos"])
 	return loader
