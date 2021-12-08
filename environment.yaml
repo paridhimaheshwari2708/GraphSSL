@@ -1,4 +1,4 @@
-name: cs224w
+name: graphssl
 channels:
   - pytorch
   - pyg
@@ -154,4 +154,4 @@ dependencies:
   - zipp=3.5.1=pyhd8ed1ab_0
   - zlib=1.2.11=h1de35cc_3
   - zstd=1.4.9=h322a384_0
-prefix: /Users/paridhi/miniconda3/envs/cs224w
+prefix: /Users/paridhi/miniconda3/envs/graphssl

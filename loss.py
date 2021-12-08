@@ -42,7 +42,7 @@ class jensen_shannon(nn.Module):
 	"""
 	The Jensen-Shannon Estimator of Mutual Information used in contrastive learning. The
 	implementation follows the paper `Learning deep representations by mutual information 
-	estimation and maximization <https://arxiv.org/abs/1808.06670>`_.
+	estimation and maximization <https://arxiv.org/abs/1808.06670>`.
 	
 	Note: The JSE loss implementation can produce negative values because a :obj:`-2log2` shift is 
 		added to the computation of JSE, for the sake of consistency with other f-convergence losses.
