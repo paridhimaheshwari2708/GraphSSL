@@ -12,6 +12,9 @@ from model import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+import warnings
+warnings.filterwarnings("ignore")
+
 def set_seed(seed):
 	"""
 	Utility function to set seed values for RNG for various modules
@@ -33,11 +36,14 @@ class Options:
 		self.parser.add_argument("--epochs", dest="epochs", action="store", default=20, type=int)
 		self.parser.add_argument("--batch_size", dest="batch_size", action="store", default=64, type=int)
 		self.parser.add_argument("--num_workers", dest="num_workers", action="store", default=8, type=int)
-		self.parser.add_argument("--dataset", dest="dataset", action="store", required=True, type=str, \
+		self.parser.add_argument("--dataset", dest="dataset", action="store", required=True, type=str,
 			choices=["proteins", "enzymes", "collab" "reddit_binary", "reddit_multi", "imdb_binary", "imdb_multi", "dd", "mutag", "nci1"])
-		self.parser.add_argument("--model", dest="model", action="store", default="gcn", type=str, choices=["gcn", "gin", "resgcn"])
+		self.parser.add_argument("--model", dest="model", action="store", default="gcn", type=str,
+			choices=["gcn", "gin", "resgcn", "gat", "graphsage", "sgc"])
+		self.parser.add_argument("--feat_dim", dest="feat_dim", action="store", default=128, type=int)
+		self.parser.add_argument("--layers", dest="layers", action="store", default=3, type=int)
 		self.parser.add_argument("--loss", dest="loss", action="store", default="infonce", type=str, choices=["infonce", "jensen_shannon"])
-		self.parser.add_argument("--augment_list", dest="augment_list", nargs="*", default=["edge_perturbation", "node_dropping"], type=str, \
+		self.parser.add_argument("--augment_list", dest="augment_list", nargs="*", default=["edge_perturbation", "node_dropping"], type=str,
 			choices=["edge_perturbation", "diffusion", "diffusion_with_sample", "node_dropping", "random_walk_subgraph", "node_attr_mask"])
 		self.parser.add_argument("--train_data_percent", dest="train_data_percent", action="store", default=1.0, type=float)
 
@@ -93,14 +99,15 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 
 
 def main(args):
-	dataset, feat_dim, num_classes = load_dataset(args.dataset)
+	dataset, input_dim, num_classes = load_dataset(args.dataset)
 	train_dataset, val_dataset, test_dataset = split_dataset(dataset, args.train_data_percent)
 
 	train_loader = build_loader(args, train_dataset, "train")
 	val_loader = build_loader(args, val_dataset, "val")
 	test_loader = build_loader(args, test_dataset, "test")
 
-	model = Encoder(feat_dim, hidden_dim=128, n_layers=3, gnn=args.model).to(device)
+	model = Encoder(input_dim, args.feat_dim, n_layers=args.layers, gnn=args.model)
+	model = model.to(device)
 
 	optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 

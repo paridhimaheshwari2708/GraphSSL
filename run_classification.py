@@ -31,10 +31,13 @@ class Options:
 		self.parser.add_argument("--lr", dest="lr", action="store", default=0.001, type=float)
 		self.parser.add_argument("--epochs", dest="epochs", action="store", default=20, type=int)
 		self.parser.add_argument("--batch_size", dest="batch_size", action="store", default=64, type=int)
-		self.parser.add_argument("--dataset", dest="dataset", action="store", required=True, type=str, \
-			choices=["proteins", "enzymes", "collab", "reddit_binary", "reddit_multi", "imdb_binary", "imdb_multi", "dd", "mutag", "nci1"])
 		self.parser.add_argument("--num_workers", dest="num_workers", action="store", default=8, type=int)
-		self.parser.add_argument("--model", dest="model", action="store", default="gcn", type=str, choices=["gcn", "gin", "resgcn"])
+		self.parser.add_argument("--dataset", dest="dataset", action="store", required=True, type=str,
+			choices=["proteins", "enzymes", "collab", "reddit_binary", "reddit_multi", "imdb_binary", "imdb_multi", "dd", "mutag", "nci1"])
+		self.parser.add_argument("--model", dest="model", action="store", default="gcn", type=str,
+			choices=["gcn", "gin", "resgcn", "gat", "graphsage", "sgc"])
+		self.parser.add_argument("--feat_dim", dest="feat_dim", action="store", default=128, type=int)
+		self.parser.add_argument("--layers", dest="layers", action="store", default=3, type=int)
 		self.parser.add_argument("--train_data_percent", dest="train_data_percent", action="store", default=1.0, type=float)
 
 		self.parse()
@@ -95,7 +98,7 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 
 
 def main(args):
-	dataset, feat_dim, num_classes = load_dataset(args.dataset)
+	dataset, input_dim, num_classes = load_dataset(args.dataset)
 
 	train_dataset, val_dataset, test_dataset = split_dataset(dataset, args.train_data_percent)
 
@@ -106,7 +109,8 @@ def main(args):
 	print("Dataset Split: {} {} {}".format(len(train_dataset), len(val_dataset), len(test_dataset)))
 	print("Number of Classes: {}".format(num_classes))
 
-	model = PredictionModel(feat_dim, hidden_dim=128, n_layers=3, output_dim=num_classes, gnn=args.model, load=args.load).to(device)
+	model = PredictionModel(input_dim, args.feat_dim, n_layers=args.layers, output_dim=num_classes, gnn=args.model, load=args.load)
+	model = model.to(device)
 
 	optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 

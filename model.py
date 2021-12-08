@@ -8,7 +8,7 @@ from torch_geometric.nn.conv import MessagePassing
 from torch_geometric.nn.inits import glorot, zeros
 from torch.nn import Parameter, Sequential, Linear, BatchNorm1d
 from torch_geometric.utils import remove_self_loops, add_self_loops
-from torch_geometric.nn import GINConv, GCNConv, global_add_pool, global_mean_pool
+from torch_geometric.nn import GCNConv, GINConv, GATConv, SAGEConv, SGConv, GatedGraphConv, global_add_pool, global_mean_pool
 
 
 class Encoder(torch.nn.Module):
@@ -21,13 +21,9 @@ class Encoder(torch.nn.Module):
 		n_layers (int, optional): The number of GNN layers in the encoder. (default: :obj:`5`)
 		pool (string, optional): The global pooling methods, :obj:`sum` or :obj:`mean`.
 			(default: :obj:`sum`)
-		gnn (string, optional): The type of GNN layer, :obj:`gcn`, :obj:`gin` or 
-			:obj:`resgcn`. (default: :obj:`gcn`)
+		gnn (string, optional): The type of GNN layer, :obj:`gcn` or :obj:`gin` or :obj:`gat`
+			or :obj:`graphsage` or :obj:`resgcn` or :obj:`sgc`. (default: :obj:`gcn`)
 		bn (bool, optional): Whether to include batch normalization. (default: :obj:`True`)
-		act (string, optional): The activation function, :obj:`relu` or :obj:`prelu`.
-			(default: :obj:`relu`)
-		bias (bool, optional): Whether to include bias term in Linear. (default: :obj:`True`)
-		xavier (bool, optional): Whether to apply xavier initialization. (default: :obj:`True`)
 		node_level (bool, optional): If :obj:`True`, the encoder will output node level
 			embedding (local representations). (default: :obj:`False`)
 		graph_level (bool, optional): If :obj:`True`, the encoder will output graph level
@@ -54,16 +50,21 @@ class Encoder(torch.nn.Module):
 	>>> encoder(some_batched_data) # a tuple of graph-level and node-level embeddings
 	"""
 	def __init__(self, feat_dim, hidden_dim, n_layers=5, pool="sum", 
-				 gnn="gcn", bn=True, act="relu", bias=True, xavier=True, 
-				 node_level=False, graph_level=True, edge_weight=False):
+				 gnn="gcn", bn=True, node_level=False, graph_level=True):
 		super(Encoder, self).__init__()
 
 		if gnn == "gcn":
-			self.encoder = GCN(feat_dim, hidden_dim, n_layers, pool, bn, act, bias, xavier, edge_weight)
+			self.encoder = GCN(feat_dim, hidden_dim, n_layers, pool, bn)
 		elif gnn == "gin":
-			self.encoder = GIN(feat_dim, hidden_dim, n_layers, pool, bn, act)
+			self.encoder = GIN(feat_dim, hidden_dim, n_layers, pool, bn)
 		elif gnn == "resgcn":
-			self.encoder = ResGCN(feat_dim, hidden_dim, num_conv_layers=n_layers, global_pool=pool)
+			self.encoder = ResGCN(feat_dim, hidden_dim, n_layers, pool)
+		elif gnn == "gat":
+			self.encoder = GAT(feat_dim, hidden_dim, n_layers, pool, bn)
+		elif gnn == "graphsage":
+			self.encoder = GraphSAGE(feat_dim, hidden_dim, n_layers, pool, bn)
+		elif gnn == "sgc":
+			self.encoder = SGC(feat_dim, hidden_dim, n_layers, pool, bn)
 
 		self.node_level = node_level
 		self.graph_level = graph_level
@@ -99,31 +100,21 @@ class Encoder(torch.nn.Module):
 
 
 class GCN(torch.nn.Module):
-	def __init__(self, feat_dim, hidden_dim, n_layers=3, pool="sum", bn=False, act="relu", bias=True, xavier=True, edge_weight=False):
+	def __init__(self, feat_dim, hidden_dim, n_layers=3, pool="sum", bn=False, xavier=True):
 		super(GCN, self).__init__()
 
 		if bn:
 			self.bns = torch.nn.ModuleList()
-		else:
-			self.bns = None
 		self.convs = torch.nn.ModuleList()
 		self.acts = torch.nn.ModuleList()
 		self.n_layers = n_layers
 		self.pool = pool
-		self.edge_weight = edge_weight
-		self.normalize = not edge_weight
-		self.add_self_loops = not edge_weight
 
-		if act == "prelu":
-			a = torch.nn.PReLU()
-		else:
-			a = torch.nn.ReLU()
+		a = torch.nn.ReLU()
 
 		for i in range(n_layers):
 			start_dim = hidden_dim if i else feat_dim
-			conv = GCNConv(start_dim, hidden_dim, bias=bias,
-						   add_self_loops=self.add_self_loops,
-						   normalize=self.normalize)
+			conv = GCNConv(start_dim, hidden_dim)
 			if xavier:
 				self.weights_init(conv)
 			self.convs.append(conv)
@@ -143,13 +134,116 @@ class GCN(torch.nn.Module):
 
 	def forward(self, data):
 		x, edge_index, batch = data
-		if self.edge_weight:
-			edge_attr = data.edge_attr
-		else:
-			edge_attr = None
 		xs = []
 		for i in range(self.n_layers):
-			x = self.convs[i](x, edge_index, edge_attr)
+			x = self.convs[i](x, edge_index)
+			x = self.acts[i](x)
+			if self.bns is not None:
+				x = self.bns[i](x)
+			xs.append(x)
+
+		if self.pool == "sum":
+			xpool = [global_add_pool(x, batch) for x in xs]
+		else:
+			xpool = [global_mean_pool(x, batch) for x in xs]
+		global_rep = torch.cat(xpool, 1)
+
+		return global_rep, x
+
+
+class GAT(torch.nn.Module):
+	def __init__(self, feat_dim, hidden_dim, n_layers=3, pool="sum",
+				 heads=1, bn=False, xavier=True):
+		super(GAT, self).__init__()
+
+		if bn:
+			self.bns = torch.nn.ModuleList()
+		self.convs = torch.nn.ModuleList()
+		self.acts = torch.nn.ModuleList()
+		self.n_layers = n_layers
+		self.pool = pool
+
+		a = torch.nn.ELU()
+
+		for i in range(n_layers):
+			start_dim = hidden_dim if i else feat_dim
+			conv = GATConv(start_dim, hidden_dim, heads=heads, concat=False)
+			if xavier:
+				self.weights_init(conv)
+			self.convs.append(conv)
+			self.acts.append(a)
+			if bn:
+				self.bns.append(BatchNorm1d(hidden_dim))
+
+	def weights_init(self, module):
+		for m in module.modules():
+			if isinstance(m, GATConv):
+				layers = [m.lin_src, m.lin_dst]
+			if isinstance(m, Linear):
+				layers = [m]
+			for layer in layers:
+				torch.nn.init.xavier_uniform_(layer.weight.data)
+				if layer.bias is not None:
+					layer.bias.data.fill_(0.0)
+
+	def forward(self, data):
+		x, edge_index, batch = data
+		xs = []
+		for i in range(self.n_layers):
+			x = self.convs[i](x, edge_index)
+			x = self.acts[i](x)
+			if self.bns is not None:
+				x = self.bns[i](x)
+			xs.append(x)
+
+		if self.pool == "sum":
+			xpool = [global_add_pool(x, batch) for x in xs]
+		else:
+			xpool = [global_mean_pool(x, batch) for x in xs]
+		global_rep = torch.cat(xpool, 1)
+
+		return global_rep, x
+
+
+class GraphSAGE(torch.nn.Module):
+	def __init__(self, feat_dim, hidden_dim, n_layers=3, pool="sum", bn=False, xavier=True):
+		super(GraphSAGE, self).__init__()
+
+		if bn:
+			self.bns = torch.nn.ModuleList()
+		self.convs = torch.nn.ModuleList()
+		self.acts = torch.nn.ModuleList()
+		self.n_layers = n_layers
+		self.pool = pool
+
+		a = torch.nn.ELU()
+
+		for i in range(n_layers):
+			start_dim = hidden_dim if i else feat_dim
+			conv = SAGEConv(start_dim, hidden_dim)
+			if xavier:
+				self.weights_init(conv)
+			self.convs.append(conv)
+			self.acts.append(a)
+			if bn:
+				self.bns.append(BatchNorm1d(hidden_dim))
+
+	def weights_init(self, module):
+		for m in module.modules():
+			if isinstance(m, SAGEConv):
+				layers = [m.lin_l, m.lin_r]
+			if isinstance(m, Linear):
+				layers = [m]
+			for layer in layers:
+				torch.nn.init.xavier_uniform_(layer.weight.data)
+				if layer.bias is not None:
+					layer.bias.data.fill_(0.0)
+
+	def forward(self, data):
+		x, edge_index, batch = data
+		xs = []
+		for i in range(self.n_layers):
+			x = self.convs[i](x, edge_index)
 			x = self.acts[i](x)
 			if self.bns is not None:
 				x = self.bns[i](x)
@@ -165,24 +259,22 @@ class GCN(torch.nn.Module):
 
 
 class GIN(torch.nn.Module):
-	def __init__(self, feat_dim, hidden_dim, n_layers=3, pool="sum", bn=False, act="relu", bias=True, xavier=True):
+	def __init__(self, feat_dim, hidden_dim, n_layers=3, pool="sum", bn=False, xavier=True):
 		super(GIN, self).__init__()
 
 		if bn:
 			self.bns = torch.nn.ModuleList()
-		else:
-			self.bns = None
 		self.convs = torch.nn.ModuleList()
 		self.n_layers = n_layers
 		self.pool = pool
 
-		self.act = torch.nn.PReLU() if act == "prelu" else torch.nn.ReLU()
+		self.act = torch.nn.ReLU()
 
 		for i in range(n_layers):
 			start_dim = hidden_dim if i else feat_dim
-			nn = Sequential(Linear(start_dim, hidden_dim, bias=bias),
+			nn = Sequential(Linear(start_dim, hidden_dim),
 							self.act,
-							Linear(hidden_dim, hidden_dim, bias=bias))
+							Linear(hidden_dim, hidden_dim))
 			if xavier:
 				self.weights_init(nn)
 			conv = GINConv(nn)
@@ -216,8 +308,50 @@ class GIN(torch.nn.Module):
 		return global_rep, x
 
 
+class SGC(torch.nn.Module):
+	def __init__(self, feat_dim, hidden_dim, n_layers=3, pool="sum", bn=False, xavier=True):
+		super(SGC, self).__init__()
+
+		self.pool = pool
+
+		a = torch.nn.ReLU()
+
+		conv = SGConv(feat_dim, hidden_dim, n_layers)
+		if xavier:
+			self.weights_init(conv)
+		self.convs = conv
+		self.acts = a
+		if bn:
+			self.bns = BatchNorm1d(hidden_dim)
+
+	def weights_init(self, module):
+		for m in module.modules():
+			if isinstance(m, SGConv):
+				layer = m.lin
+			if isinstance(m, Linear):
+				layer = m
+			torch.nn.init.xavier_uniform_(layer.weight.data)
+			if layer.bias is not None:
+				layer.bias.data.fill_(0.0)
+
+	def forward(self, data):
+		x, edge_index, batch = data
+
+		x = self.convs(x, edge_index)
+		x = self.acts(x)
+		if self.bns is not None:
+			x = self.bns(x)
+
+		if self.pool == "sum":
+			global_rep = global_add_pool(x, batch)
+		else:
+			global_rep = global_mean_pool(x, batch)
+
+		return global_rep, x
+
+
 class ResGCNConv(MessagePassing):
-	def __init__(self, in_channels, out_channels, improved=False, cached=False, bias=True, edge_norm=True, gfn=False):
+	def __init__(self, in_channels, out_channels, improved=False, cached=False, edge_norm=True, gfn=False):
 		super(ResGCNConv, self).__init__("add")
 
 		self.in_channels = in_channels
@@ -229,11 +363,7 @@ class ResGCNConv(MessagePassing):
 		self.gfn = gfn
 
 		self.weight = Parameter(torch.Tensor(in_channels, out_channels))
-
-		if bias:
-			self.bias = Parameter(torch.Tensor(out_channels))
-		else:
-			self.register_parameter("bias", None)
+		self.bias = Parameter(torch.Tensor(out_channels))
 
 		self.weights_init()
 
@@ -298,9 +428,9 @@ class ResGCNConv(MessagePassing):
 
 
 class ResGCN(torch.nn.Module):
-	def __init__(self, feat_dim, hidden_dim, num_feat_layers=1, num_conv_layers=3,
-				 num_fc_layers=2, xg_dim=None, bn=True, gfn=False, collapse=False, 
-				 residual=False, global_pool="sum", dropout=0, edge_norm=True):
+	def __init__(self, feat_dim, hidden_dim, num_conv_layers, pool,
+				 num_feat_layers=1, num_fc_layers=2, xg_dim=None, bn=True, gfn=False,
+				 collapse=False, residual=False, dropout=0, edge_norm=True):
 		super(ResGCN, self).__init__()
 
 		assert num_feat_layers == 1, "more feat layers are not now supported"
@@ -309,11 +439,11 @@ class ResGCN(torch.nn.Module):
 		self.collapse = collapse
 		self.bn = bn
 
-		assert "sum" in global_pool or "mean" in global_pool, global_pool
-		if "sum" in global_pool:
-			self.global_pool = global_add_pool
+		assert "sum" in pool or "mean" in pool, pool
+		if "sum" in pool:
+			self.pool = global_add_pool
 		else:
-			self.global_pool = global_mean_pool
+			self.pool = global_mean_pool
 		self.dropout = dropout
 		GConv = partial(ResGCNConv, edge_norm=edge_norm, gfn=gfn)
 
@@ -330,7 +460,7 @@ class ResGCN(torch.nn.Module):
 			self.bn_feat = BatchNorm1d(feat_dim)
 			self.bns_fc = torch.nn.ModuleList()
 			self.lins = torch.nn.ModuleList()
-			if "gating" in global_pool:
+			if "gating" in pool:
 				self.gating = torch.nn.Sequential(
 					Linear(feat_dim, feat_dim),
 					torch.nn.ReLU(),
@@ -346,7 +476,7 @@ class ResGCN(torch.nn.Module):
 			self.bn_feat = BatchNorm1d(feat_dim)
 			feat_gfn = True  # set true so GCNConv is feat transform
 			self.conv_feat = ResGCNConv(feat_dim, hidden_dim, gfn=feat_gfn)
-			if "gating" in global_pool:
+			if "gating" in pool:
 				self.gating = torch.nn.Sequential(
 					Linear(hidden_dim, hidden_dim),
 					torch.nn.ReLU(),
@@ -391,7 +521,7 @@ class ResGCN(torch.nn.Module):
 			x = x + x_ if self.conv_residual else x_
 		local_rep = x
 		gate = 1 if self.gating is None else self.gating(x)
-		x = self.global_pool(x * gate, batch)
+		x = self.pool(x * gate, batch)
 		x = x if xg is None else x + xg
 		
 		for i, lin in enumerate(self.lins):
@@ -410,7 +540,7 @@ class PredictionModel(nn.Module):
 	def __init__(self, feat_dim, hidden_dim, n_layers, output_dim, gnn, load=None):
 		super(PredictionModel, self).__init__()
 
-		self.encoder = Encoder(feat_dim, hidden_dim=hidden_dim, n_layers=n_layers, gnn=gnn)
+		self.encoder = Encoder(feat_dim, hidden_dim, n_layers=n_layers, gnn=gnn)
 
 		if load:
 			ckpt = torch.load(os.path.join("logs", load, "best_model.ckpt"))
@@ -418,10 +548,11 @@ class PredictionModel(nn.Module):
 			for param in self.encoder.parameters():
 				param.requires_grad = False
 
-		if gnn == "resgcn":
-			self.classifier = nn.Linear(hidden_dim, output_dim)
+		if gnn in ["resgcn", "sgc"]:
+			feat_dim = hidden_dim
 		else:
-			self.classifier = nn.Linear(3*hidden_dim, output_dim)
+			feat_dim = n_layers * hidden_dim
+		self.classifier = nn.Linear(feat_dim, output_dim)
 
 	def forward(self, data):
 		embeddings = self.encoder(data)

@@ -59,25 +59,25 @@ class CatDegOnehot(object):
 
 def load_dataset(name, expand_features=True):
 	if name == "proteins":
-		dataset = TUDataset(root="/tmp/PROTEINS", name="PROTEINS", use_node_attr=True)
+		dataset = TUDataset(root="/tmp/TUDataset/PROTEINS", name="PROTEINS", use_node_attr=True)
 	elif name == "enzymes":
-		dataset = TUDataset(root="/tmp/ENZYMES", name="ENZYMES", use_node_attr=True)
+		dataset = TUDataset(root="/tmp/TUDataset/ENZYMES", name="ENZYMES", use_node_attr=True)
 	elif name == "collab":
-		dataset = TUDataset(root="/tmp/COLLAB", name="COLLAB", use_node_attr=True)
+		dataset = TUDataset(root="/tmp/TUDataset/COLLAB", name="COLLAB", use_node_attr=True)
 	elif name == "reddit_binary":
-		dataset = TUDataset(root="/tmp/REDDIT-BINARY", name="REDDIT-BINARY", use_node_attr=True)
+		dataset = TUDataset(root="/tmp/TUDataset/REDDIT-BINARY", name="REDDIT-BINARY", use_node_attr=True)
 	elif name == "reddit_multi":
-		dataset = TUDataset(root="/tmp/REDDIT-MULTI-5K", name="REDDIT-MULTI-5K", use_node_attr=True)
+		dataset = TUDataset(root="/tmp/TUDataset/REDDIT-MULTI-5K", name="REDDIT-MULTI-5K", use_node_attr=True)
 	elif name == "imdb_binary":
-		dataset = TUDataset(root="/tmp/IMDB-BINARY", name="IMDB-BINARY", use_node_attr=True)
+		dataset = TUDataset(root="/tmp/TUDataset/IMDB-BINARY", name="IMDB-BINARY", use_node_attr=True)
 	elif name == "imdb_multi":
-		dataset = TUDataset(root="/tmp/IMDB-MULTI", name="IMDB-MULTI", use_node_attr=True)
+		dataset = TUDataset(root="/tmp/TUDataset/IMDB-MULTI", name="IMDB-MULTI", use_node_attr=True)
 	elif name == "dd":
-		dataset = TUDataset(root="/tmp/DD", name="DD", use_node_attr=True)
+		dataset = TUDataset(root="/tmp/TUDataset/DD", name="DD", use_node_attr=True)
 	elif name == "mutag":
-		dataset = TUDataset(root="/tmp/MUTAG", name="MUTAG", use_node_attr=True)
+		dataset = TUDataset(root="/tmp/TUDataset/MUTAG", name="MUTAG", use_node_attr=True)
 	elif name == "nci1":
-		dataset = TUDataset(root="/tmp/NCI1", name="NCI1", use_node_attr=True)
+		dataset = TUDataset(root="/tmp/TUDataset/NCI1", name="NCI1", use_node_attr=True)
 
 	num_classes = dataset.num_classes
 	if dataset[0].x is None or expand_features:
