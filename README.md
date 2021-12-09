@@ -12,8 +12,7 @@ conda activate cs224w
 ```
 
 ## Training 
-For training a self-supervised model, we need to specify a few important arguments to the <code>run.py<\code> script.
-
+For training a self-supervised model, we need to specify a few important arguments to the <code>run.py</code> script.
 ```
 --save                  Specify where folder name of the experiment where the logs and models shall be save
 --dataset               Specify the dataset on which you want to train the model
@@ -21,8 +20,7 @@ For training a self-supervised model, we need to specify a few important argumen
 --loss                  Specify the loss function for contrastive training
 --augment_list          Specify the augmentations to be applied as space separated strings
 --train_data_percent    Specify the fraction of training samples which are labelled
-```
-  
+``` 
 As an example, one run of the train a self-supervised model on the proteins dataset shall be as follows
 ```
 python3 run.py --save proteins_exp --dataset proteins --model gcn --loss infonce --augment_list edge_perturbation node_dropping --train_data_percent 1
