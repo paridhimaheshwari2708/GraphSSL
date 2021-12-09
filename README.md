@@ -7,7 +7,7 @@ This repository serves as a mini-tutorial on using self-supervised learning for 
 Setup the conda environment which ensures the installation of the correct version of PyTorch Geometric (PyG) and all other dependencies.
 
 ```
-conda env create -f environment.yml
+conda env create -f environment.yaml
 conda activate graphssl
 ```
 
