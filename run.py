@@ -25,8 +25,8 @@ def set_seed(seed):
 
 
 class Options:
-	def __init__(self):
 
+	def __init__(self):
 		self.parser = argparse.ArgumentParser(description="Self-Supervised Learning for Graphs")
 		self.parser.add_argument("--save", dest="save", action="store", required=True)
 		self.parser.add_argument("--lr", dest="lr", action="store", default=0.001, type=float)
@@ -74,40 +74,39 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 		for data in dataloader:
 			data.to(device)
 
-
 			# readout_anchor is the embedding of the original datapoint x on passing through the model
 			readout_anchor = model((data.x_anchor, data.edge_index_anchor, data.x_anchor_batch))
 
 			# readout_positive is the embedding of the positively augmented x on passing through the model
 			readout_positive = model((data.x_pos, data.edge_index_pos, data.x_pos_batch))
 
-			# the negative samples for calculating the contrastive loss is computed in contrastive_fn
+			# negative samples for calculating the contrastive loss is computed in contrastive_fn
 			loss = contrastive_fn(readout_anchor, readout_positive)
 
 			if mode == "train":
-				# Backprop
+				# backprop
 				optimizer.zero_grad()
 				loss.backward()
 				optimizer.step()
 
-			# Keep track of loss values
+			# keep track of loss values
 			losses.append(loss.item())
 			t.set_postfix(loss=losses[-1])
 			t.update()
 
-	# Gather the results for the epoch
+	# gather the results for the epoch
 	epoch_loss = sum(losses) / len(losses)
 	return epoch_loss
 
 
 def main(args):
 	dataset, input_dim, num_classes = load_dataset(args.dataset)
+
+	# split the data into train / val / test sets
 	train_dataset, val_dataset, test_dataset = split_dataset(dataset, args.train_data_percent)
 
-	'''
-	build_loader is a dataloader which gives a paired sampled - the original x and the 
-	positively augmented x obtained by applying the transformations in the augment_list as an argument
-	'''
+	# build_loader is a dataloader which gives a paired sampled - the original x and the positively 
+	# augmented x obtained by applying the transformations in the augment_list as an argument
 	train_loader = build_loader(args, train_dataset, "train")
 	val_loader = build_loader(args, val_dataset, "val")
 	test_loader = build_loader(args, test_dataset, "test")
@@ -131,7 +130,7 @@ def main(args):
 		print("Val Epoch Loss: {}".format(val_loss))
 		logger.add_scalar("Val Loss", val_loss, epoch)
 
-		# Save Model
+		# save Model
 		is_best_loss = False
 		if val_loss < best_val_loss:
 			best_epoch, best_train_loss, best_val_loss, is_best_loss = epoch, train_loss, val_loss, True

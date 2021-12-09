@@ -10,13 +10,11 @@ from torch.nn import Parameter, Sequential, Linear, BatchNorm1d
 from torch_geometric.utils import remove_self_loops, add_self_loops
 from torch_geometric.nn import GCNConv, GINConv, GATConv, SAGEConv, SGConv, global_add_pool, global_mean_pool
 
-"""
-Part of the code has been adapted from https://github.com/divelab/DIG.
-"""
 
 class Encoder(torch.nn.Module):
 	"""
 	A wrapper class for easier instantiation of pre-implemented graph encoders.
+	Part of the code has been adapted from https://github.com/divelab/DIG.
 	
 	Args:
 		feat_dim (int): The dimension of input node features.
@@ -52,6 +50,7 @@ class Encoder(torch.nn.Module):
 	>>> encoder = Encoder(feat_dim, 128, n_layers=5, node_level=True, graph_level=False)
 	>>> encoder(some_batched_data) # a tuple of graph-level and node-level embeddings
 	"""
+
 	def __init__(self, feat_dim, hidden_dim, n_layers=5, pool="sum", 
 				 gnn="gcn", bn=True, node_level=False, graph_level=True):
 		super(Encoder, self).__init__()
@@ -103,6 +102,11 @@ class Encoder(torch.nn.Module):
 
 
 class GCN(torch.nn.Module):
+	"""
+	Graph Convolutional Network from the paper `Semi-supervised Classification
+	with Graph Convolutional Networks <https://arxiv.org/abs/1609.02907>`.
+	"""
+
 	def __init__(self, feat_dim, hidden_dim, n_layers=3, pool="sum", bn=False, xavier=True):
 		super(GCN, self).__init__()
 
@@ -155,6 +159,11 @@ class GCN(torch.nn.Module):
 
 
 class GAT(torch.nn.Module):
+	"""
+	Graph Attention Network from the paper `Graph Attention
+	Networks <https://arxiv.org/abs/1710.10903>`.
+	"""
+
 	def __init__(self, feat_dim, hidden_dim, n_layers=3, pool="sum",
 				 heads=1, bn=False, xavier=True):
 		super(GAT, self).__init__()
@@ -209,6 +218,11 @@ class GAT(torch.nn.Module):
 
 
 class GraphSAGE(torch.nn.Module):
+	"""
+	GraphSAGE model from the paper `Inductive Representation
+	Learning on Large Graphs” <https://arxiv.org/abs/1706.02216>`.
+	"""
+
 	def __init__(self, feat_dim, hidden_dim, n_layers=3, pool="sum", bn=False, xavier=True):
 		super(GraphSAGE, self).__init__()
 
@@ -262,6 +276,11 @@ class GraphSAGE(torch.nn.Module):
 
 
 class GIN(torch.nn.Module):
+	"""
+	Graph Isomorphism Network from the paper `How Powerful are 
+	Graph Neural Networks? <https://arxiv.org/abs/1810.00826>`.
+	"""
+
 	def __init__(self, feat_dim, hidden_dim, n_layers=3, pool="sum", bn=False, xavier=True):
 		super(GIN, self).__init__()
 
@@ -312,6 +331,11 @@ class GIN(torch.nn.Module):
 
 
 class SGC(torch.nn.Module):
+	"""
+	Simple Graph Convolutional Network from the paper `Simplifying
+	Graph Convolutional Networks” <https://arxiv.org/abs/1902.07153>`.
+	"""
+
 	def __init__(self, feat_dim, hidden_dim, n_layers=3, pool="sum", bn=False, xavier=True):
 		super(SGC, self).__init__()
 
@@ -354,6 +378,10 @@ class SGC(torch.nn.Module):
 
 
 class ResGCNConv(MessagePassing):
+	"""
+	Helper function for ResGCN
+	"""
+
 	def __init__(self, in_channels, out_channels, improved=False, cached=False, edge_norm=True, gfn=False):
 		super(ResGCNConv, self).__init__("add")
 
@@ -431,6 +459,10 @@ class ResGCNConv(MessagePassing):
 
 
 class ResGCN(torch.nn.Module):
+	"""
+	Residual Graph Convolutional Network.
+	"""
+
 	def __init__(self, feat_dim, hidden_dim, num_conv_layers, pool,
 				 num_feat_layers=1, num_fc_layers=2, xg_dim=None, bn=True, gfn=False,
 				 collapse=False, residual=False, dropout=0, edge_norm=True):
@@ -539,9 +571,24 @@ class ResGCN(torch.nn.Module):
 		return x, local_rep
 
 
-class PredictionModel(nn.Module):
+class GraphClassificationModel(nn.Module):
+	"""
+	Model for graph classification.
+	GNN Encoder followed by linear layer.
+	
+	Args:
+		feat_dim (int): The dimension of input node features.
+		hidden_dim (int): The dimension of node-level (local) embeddings. 
+		n_layers (int, optional): The number of GNN layers in the encoder. (default: :obj:`5`)
+		gnn (string, optional): The type of GNN layer, :obj:`gcn` or :obj:`gin` or :obj:`gat`
+			or :obj:`graphsage` or :obj:`resgcn` or :obj:`sgc`. (default: :obj:`gcn`)
+		load (string, optional): The SSL model to be loaded. The GNN encoder will be
+			initialized with pretrained SSL weights, and only the classifier head will
+			be trained. Otherwise, GNN encoder and classifier head are trained end-to-end.
+	"""
+
 	def __init__(self, feat_dim, hidden_dim, n_layers, output_dim, gnn, load=None):
-		super(PredictionModel, self).__init__()
+		super(GraphClassificationModel, self).__init__()
 
 		self.encoder = Encoder(feat_dim, hidden_dim, n_layers=n_layers, gnn=gnn)
 

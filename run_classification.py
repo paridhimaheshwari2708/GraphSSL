@@ -24,6 +24,7 @@ def set_seed(seed):
 
 
 class Options:
+
 	def __init__(self):
 		self.parser = argparse.ArgumentParser(description="Classification Task on Graphs")
 		self.parser.add_argument("--save", dest="save", action="store", required=True)
@@ -76,22 +77,24 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 			labels = data.y
 
 			scores = model(data_input)
+
+			# compute cross entropy loss
 			loss = criterion(scores, labels)
 
 			if mode == "train":
-				# Backprop
+				# backprop
 				optimizer.zero_grad()
 				loss.backward()
 				optimizer.step()
 
-			# Keep track of things
+			# keep track of loss and accuracy
 			pred = scores.argmax(dim=1)
 			correct += int((pred == labels).sum())
 			losses.append(loss.item())
 			t.set_postfix(loss=losses[-1])
 			t.update()
 
-	# Gather the results for the epoch
+	# gather the results for the epoch
 	epoch_loss = sum(losses) / len(losses)
 	accuracy = correct / len(dataloader.dataset)
 	return epoch_loss, accuracy
@@ -100,8 +103,10 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 def main(args):
 	dataset, input_dim, num_classes = load_dataset(args.dataset)
 
+	# split the data into train / val / test sets
 	train_dataset, val_dataset, test_dataset = split_dataset(dataset, args.train_data_percent)
 
+	# build_classification_loader is a dataloader which gives one graph at a time
 	train_loader = build_classification_loader(args, train_dataset, "train")
 	val_loader = build_classification_loader(args, val_dataset, "val")
 	test_loader = build_classification_loader(args, test_dataset, "test")
@@ -109,7 +114,8 @@ def main(args):
 	print("Dataset Split: {} {} {}".format(len(train_dataset), len(val_dataset), len(test_dataset)))
 	print("Number of Classes: {}".format(num_classes))
 
-	model = PredictionModel(input_dim, args.feat_dim, n_layers=args.layers, output_dim=num_classes, gnn=args.model, load=args.load)
+	# classification model is a GNN encoder followed by linear layer
+	model = GraphClassificationModel(input_dim, args.feat_dim, n_layers=args.layers, output_dim=num_classes, gnn=args.model, load=args.load)
 	model = model.to(device)
 
 	optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -128,7 +134,7 @@ def main(args):
 		print("Val Epoch Loss: {}, Accuracy: {}".format(val_loss,val_acc))
 		logger.add_scalar("Val Loss", val_loss, epoch)
 
-		# Save Model
+		# save Model
 		is_best_loss = False
 		if val_loss < best_val_loss:
 			best_epoch, best_train_loss, best_val_loss, is_best_loss = epoch, train_loss, val_loss, True

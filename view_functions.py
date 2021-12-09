@@ -6,7 +6,7 @@ from sklearn.preprocessing import MinMaxScaler
 from torch_geometric.utils import to_dense_adj, dense_to_sparse, subgraph
 
 """
-A major part of the code is adapted from https://github.com/divelab/DIG.
+Part of the code is adapted from https://github.com/divelab/DIG.
 """
 
 class EdgePerturbation():
