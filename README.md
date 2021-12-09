@@ -8,7 +8,7 @@ Setup the conda environment which ensures the installation of the correct versio
 
 ```
 conda env create -f environment.yml
-conda activate cs224w
+conda activate graphssl
 ```
 
 ## Training 
