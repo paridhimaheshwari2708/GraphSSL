@@ -34,7 +34,7 @@ class Options:
 		self.parser.add_argument("--batch_size", dest="batch_size", action="store", default=64, type=int)
 		self.parser.add_argument("--num_workers", dest="num_workers", action="store", default=8, type=int)
 		self.parser.add_argument("--dataset", dest="dataset", action="store", required=True, type=str,
-			choices=["proteins", "enzymes", "collab" "reddit_binary", "reddit_multi", "imdb_binary", "imdb_multi", "dd", "mutag", "nci1"])
+			choices=["proteins", "enzymes", "collab" ,"reddit_binary", "reddit_multi", "imdb_binary", "imdb_multi", "dd", "mutag", "nci1"])
 		self.parser.add_argument("--model", dest="model", action="store", default="gcn", type=str,
 			choices=["gcn", "gin", "resgcn", "gat", "graphsage", "sgc"])
 		self.parser.add_argument("--feat_dim", dest="feat_dim", action="store", default=128, type=int)

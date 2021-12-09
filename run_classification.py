@@ -118,6 +118,7 @@ def main(args):
 
 	logger = SummaryWriter(logdir = os.path.join("runs", args.save))
 
+	best_valid_epoch = 0
 	for epoch in range(args.epochs):
 		train_loss, train_acc = run(args, epoch, "train", train_loader, model, optimizer)
 		print("Train Epoch Loss: {}, Accuracy: {}".format(train_loss, train_acc))
@@ -131,9 +132,11 @@ def main(args):
 		is_best_loss = False
 		if val_loss < best_val_loss:
 			best_epoch, best_train_loss, best_val_loss, is_best_loss = epoch, train_loss, val_loss, True
+			best_valid_epoch = epoch
 
 		model.save_checkpoint(os.path.join("logs", args.save), optimizer, epoch, best_train_loss, best_val_loss, is_best_loss)
 
+	print("Epoch for best validation loss :", best_valid_epoch)
 	print("Train Loss at epoch {} (best model): {:.3f}".format(best_epoch, best_train_loss))
 	print("Val Loss at epoch {} (best model): {:.3f}".format(best_epoch, best_val_loss))
 
