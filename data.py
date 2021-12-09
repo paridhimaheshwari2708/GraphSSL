@@ -113,9 +113,10 @@ def split_dataset(dataset, train_data_percent=1.0):
 	n = len(dataset)
 	train_split, val_split, test_split = DATA_SPLIT
 
-	train_end = int(n * DATA_SPLIT[0] * train_data_percent)
+	train_end = int(n * DATA_SPLIT[0])
 	val_end = train_end + int(n * DATA_SPLIT[1])
-	train_dataset, val_dataset, test_dataset = [i for i in dataset[:train_end]], [i for i in dataset[train_end:val_end]], [i for i in dataset[val_end:]]
+	train_label_percent = int(train_end * train_data_percent)
+	train_dataset, val_dataset, test_dataset = [i for i in dataset[:train_label_percent]], [i for i in dataset[train_end:val_end]], [i for i in dataset[val_end:]]
 	return train_dataset, val_dataset, test_dataset
 
 
