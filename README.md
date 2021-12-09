@@ -19,10 +19,27 @@ For training a self-supervised model, we need to specify a few important argumen
 --model                 Specify the model architecture of the GNN Encoder
 --loss                  Specify the loss function for contrastive training
 --augment_list          Specify the augmentations to be applied as space separated strings
---train_data_percent    Specify the fraction of training samples which are labelled
 ``` 
-As an example, one run of the train a self-supervised model on the proteins dataset shall be as follows
+As an example, one run to train a self-supervised model on the proteins dataset shall be as follows
 ```
-python3 run.py --save proteins_exp --dataset proteins --model gcn --loss infonce --augment_list edge_perturbation node_dropping --train_data_percent 1
+python3 run.py --save proteins_exp --dataset proteins --model gcn --loss infonce --augment_list edge_perturbation node_dropping
+```
+
+## Evaluation
+For training(only the final layers) and evaluating the model on the downstream task(graph classification), we shall use the <code>run_classification.py</code> script. This shall 
+```
+--save                  Specify where folder name of the experiment where the logs and models shall be save
+--load                  Specify the folder name from which we want the self-supervised model is loaded. If left empty, it shall train the model end-to-end
+--dataset               Specify the dataset on which you want to train the model
+--model                 Specify the model architecture of the GNN Encoder
+--train_data_percent    Specify the fraction of training samples which are labelled
+```
+As an example, one run to train the final linear layers a self-supervised model on the proteins dataset shall be as follows
+```
+python3 run_classification.py --save proteins_exp_finetuned --load proteins_exp --dataset proteins --model gcn --train_data_percent 1.0
+```
+For the same dataset, training the model end-to-end (and not just the final layers) can be done as follows
+```
+python3 run_classification.py --save proteins_exp_finetuned_e2e  --dataset proteins --model gcn --train_data_percent 1.0
 ```
 
