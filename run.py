@@ -12,9 +12,6 @@ from model import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-import warnings
-warnings.filterwarnings("ignore")
-
 def set_seed(seed):
 	"""
 	Utility function to set seed values for RNG for various modules

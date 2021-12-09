@@ -22,15 +22,15 @@ class infonce(nn.Module):
 			tau: Float. Usually in (0,1].
 			norm: Boolean. Whether to apply normlization.
 		"""
-		
+
 		batch_size, _ = embed_anchor.size()
 		sim_matrix = torch.einsum("ik,jk->ij", embed_anchor, embed_positive)
-		
+
 		if self.norm:
 			embed_anchor_abs = embed_anchor.norm(dim=1)
 			embed_positive_abs = embed_positive.norm(dim=1)
 			sim_matrix = sim_matrix / torch.einsum("i,j->ij", embed_anchor_abs, embed_positive_abs)
-			
+
 		sim_matrix = torch.exp(sim_matrix / self.tau)
 		pos_sim = sim_matrix[range(batch_size), range(batch_size)]
 		loss = pos_sim / (sim_matrix.sum(dim=1) - pos_sim)
@@ -43,7 +43,7 @@ class jensen_shannon(nn.Module):
 	The Jensen-Shannon Estimator of Mutual Information used in contrastive learning. The
 	implementation follows the paper `Learning deep representations by mutual information 
 	estimation and maximization <https://arxiv.org/abs/1808.06670>`.
-	
+
 	Note: The JSE loss implementation can produce negative values because a :obj:`-2log2` shift is 
 		added to the computation of JSE, for the sake of consistency with other f-convergence losses.
 	"""
