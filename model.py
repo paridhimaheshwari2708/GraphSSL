@@ -10,7 +10,9 @@ from torch.nn import Parameter, Sequential, Linear, BatchNorm1d
 from torch_geometric.utils import remove_self_loops, add_self_loops
 from torch_geometric.nn import GCNConv, GINConv, GATConv, SAGEConv, SGConv, GatedGraphConv, global_add_pool, global_mean_pool
 
-
+"""
+A major part of the code is adapted from https://github.com/divelab/DIG.
+"""
 class Encoder(torch.nn.Module):
 	"""
 	A wrapper class for easier instantiation of pre-implemented graph encoders.

@@ -77,9 +77,14 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 		for data in dataloader:
 			data.to(device)
 
+
+			# readout_anchor is the embedding of the original datapoint x on passing through the model
 			readout_anchor = model((data.x_anchor, data.edge_index_anchor, data.x_anchor_batch))
+
+			# readout_positive is the embedding of the positively augmented x on passing through the model
 			readout_positive = model((data.x_pos, data.edge_index_pos, data.x_pos_batch))
 
+			# the negative samples for calculating the contrastive loss is computed in contrastive_fn
 			loss = contrastive_fn(readout_anchor, readout_positive)
 
 			if mode == "train":
@@ -88,7 +93,7 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 				loss.backward()
 				optimizer.step()
 
-			# Keep track of things
+			# Keep track of loss values
 			losses.append(loss.item())
 			t.set_postfix(loss=losses[-1])
 			t.update()
@@ -102,10 +107,15 @@ def main(args):
 	dataset, input_dim, num_classes = load_dataset(args.dataset)
 	train_dataset, val_dataset, test_dataset = split_dataset(dataset, args.train_data_percent)
 
+	'''
+	build_loader is a dataloader which gives a paired sampled - the original x and the 
+	positively augmented x obtained by applying the transformations in the augment_list as an argument
+	'''
 	train_loader = build_loader(args, train_dataset, "train")
 	val_loader = build_loader(args, val_dataset, "val")
 	test_loader = build_loader(args, test_dataset, "test")
 
+	# easy initialization of the GNN model encoder to map graphs to embeddings needed for contrastive training
 	model = Encoder(input_dim, args.feat_dim, n_layers=args.layers, gnn=args.model)
 	model = model.to(device)
 
