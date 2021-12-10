@@ -105,7 +105,7 @@ def split_dataset(dataset, train_data_percent=1.0):
 	Args:
 		dataset (list): all graphs in the dataset.
 		train_data_percent (float): Fraction of training data
-			which is labeled. (default 1.0)
+			which is labelled. (default 1.0)
 	"""
 
 	random.shuffle(dataset)

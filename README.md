@@ -54,7 +54,7 @@ For training and evaluating the model on the downstream task, here graph classif
 --model                 Specify the model architecture of the GNN Encoder
 --feat_dim              Specify the dimension of node features in GNN
 --layers                Specify the number of layers of GNN Encoder
---train_data_percent    Specify the fraction of training samples which are labeled
+--train_data_percent    Specify the fraction of training samples which are labelled
 ```
 
 The options supported for above arguments are:
