@@ -65,7 +65,8 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 	else:
 		assert False, "Wrong Mode:{} for Run".format(mode)
 
-	criterion = torch.nn.CrossEntropyLoss()
+	# CrossEntropy loss since it is a classification task
+	loss_fn = torch.nn.CrossEntropyLoss()
 
 	losses = []
 	correct = 0
@@ -76,10 +77,11 @@ def run(args, epoch, mode, dataloader, model, optimizer):
 			data_input = data.x, data.edge_index, data.batch
 			labels = data.y
 
+			# get class scores from model
 			scores = model(data_input)
 
 			# compute cross entropy loss
-			loss = criterion(scores, labels)
+			loss = loss_fn(scores, labels)
 
 			if mode == "train":
 				# backprop
@@ -134,7 +136,7 @@ def main(args):
 		print("Val Epoch Loss: {}, Accuracy: {}".format(val_loss,val_acc))
 		logger.add_scalar("Val Loss", val_loss, epoch)
 
-		# save Model
+		# save model
 		is_best_loss = False
 		if val_loss < best_val_loss:
 			best_epoch, best_train_loss, best_val_loss, is_best_loss = epoch, train_loss, val_loss, True

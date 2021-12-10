@@ -130,7 +130,7 @@ def main(args):
 		print("Val Epoch Loss: {}".format(val_loss))
 		logger.add_scalar("Val Loss", val_loss, epoch)
 
-		# save Model
+		# save model
 		is_best_loss = False
 		if val_loss < best_val_loss:
 			best_epoch, best_train_loss, best_val_loss, is_best_loss = epoch, train_loss, val_loss, True
