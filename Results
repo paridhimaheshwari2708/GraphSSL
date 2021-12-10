@@ -1,9 +1,0 @@
-Mutag:
-- GCN 75
-- GCN SSL - 85
-- Augmentation:  python run.py --save mutag_ssl_gcn_1 --dataset mutag --model gcn --augment_list edge_perturbation random_walk_subgraph node_attr_mask
-- 
-
-python run_classification.py --save mutag_ssl_gcn_1 --dataset mutag --model gcn --augment_list edge_perturbation random_walk_subgraph node_attr_mask
-
-
