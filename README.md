@@ -18,7 +18,7 @@ git clone https://github.com/paridhimaheshwari2708/GraphSSL.git
 cd GraphSSL/
 ```
 
-## Self-supervised Pretraining 
+## Self-supervised pretraining 
 For training a self-supervised model, we use the <code>run.py</code> script and we need to specify a few important arguments:
 ```
 --save                  Specify where folder name of the experiment where the logs and models are saved
@@ -43,7 +43,7 @@ As an example, run the following command to train a self-supervised model on the
 python3 run.py --save proteins_exp --dataset proteins --model gcn --loss infonce --augment_list edge_perturbation node_dropping
 ```
 
-## Evaluation on Graph Classification
+## Evaluation on graph classification
 For training and evaluating the model on the downstream task, here graph classification, we use the <code>run_classification.py</code> script. The arguments are:
 ```
 --save                  Specify where folder name of the experiment where the logs and models are saved
